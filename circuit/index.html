@@ -7,6 +7,9 @@
 <title>神経回路</title>
 <style>
 td    {font-size: 10pt;}
+/* UI spacing tweaks */
+table { margin-top: 0; margin-bottom: 0; }
+#stimTable, #synTable { margin-top: 0; margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -25,6 +28,7 @@ td    {font-size: 10pt;}
             </td>
         </tr>
     </table>
+	<br>
     <div id="neuronTable">
 	<table border="1">
   	    <tbody  id="neuronTablebody">
@@ -33,25 +37,17 @@ td    {font-size: 10pt;}
 		    <td id="id_n_num1">1</td>
 		    <td>閾値
 			<input type="number" name="n_thre1" min="5" max="40" 
-			value="10" id="id_n_thre1" style="width:50px">mV</td>
-		    <td>相対不応期の時定数
-			<input type="number" name="n_tau1" min="1" max="20" step="0.1" 
-			value="2.5" id="id_n_tau1" style="width:50px">mS</td>
-		</tr>
+			value="10" id="id_n_thre1" style="width:50px">mV</td></tr>
 		<tr id="neuronTablerow2">
 		    <td>ニューロンの番号</td>
 		    <td id="id_n_num2">2</td>
 		    <td>閾値
 			<input type="number" name="n_thre2" min="5" max="40" 
-			value="10" id="id_n_thre2" style="width:50px">mV</td>
-		    <td>相対不応期の時定数
-			<input type="number" name="n_tau2" min="1" max="20" step="0.1" 
-			value="2.5" id="id_n_tau2" style="width:50px">mS</td>
-		</tr>
+			value="10" id="id_n_thre2" style="width:50px">mV</td></tr>
 	    </tbody>
         </table>
     </div>
-<br>
+	<br>
     <table>
         <tr>
             <td>
@@ -66,27 +62,27 @@ td    {font-size: 10pt;}
     </table>
     <div id="stimTable">
         <table border="1">
-            <tbody  id="stimTablebody">
-                <tr id="stimTablerow1">
-		　　<td>刺激装置の番号</td>
-                    <td id="num">1</td>
+        <tbody  id="stimTablebody">
+        <tr id="stimTablerow1">
+		　　  <td>刺激装置の番号</td>
+            <td id="num">1</td>
 		    <td>刺激するニューロンの番号
-			<input type="number" name="stim_neuron1" min="1" max="2" 
-			value="1" id="idStimNeuron1" style="width:50px"></td>
-                    <td>周波数
-                        <input type="number" name="stim_fre1" min="1" max="500" 
-			value="100" id="idStimFre1" style="width:50px">Hz</td>
+			    <input type="number" name="stim_neuron1" min="1" max="2" 
+			    value="1" id="idStimNeuron1" style="width:50px"></td>
+            <td>刺激間隔
+               <input type="number" name="stim_int1" min="2" max="1000" 
+			   value="10" id="idStimFre1" style="width:50px">m秒</td>
 		    <td>開始時間
-			<input type="number" name="stim_start1" min="0" max="500" 
-			value="0" id="idStimStart1" style="width:50px">mS</td>
+			   <input type="number" name="stim_start1" min="0" max="500" 
+			   value="0" id="idStim秒tart1" style="width:50px">m秒</td>
 		    <td>持続時間
-                    	<input type="number" name="stim_cont1" min="0" max="500" 
-			value="0" id="idStimCont1" style="width:50px">mS(連続は0）</td>
-                 </tr>
-            </tbody>
+               <input type="number" name="stim_cont1" min="0" max="500" 
+			   value="0" id="idStimCont1" style="width:50px">m秒(連続は0）</td>
+        </tr>
+        </tbody>
         </table>
     </div>
-<br>
+	<br>
     <table>
         <tr>
             <td>
@@ -105,24 +101,28 @@ td    {font-size: 10pt;}
                 <tr id="synapseTablerow1">
 		　　<td>シナプスの番号</td>
                     <td id="num">1</td>
-		    <td>シナプス前ニューロンの番号
+		    <td>前ニューロン番号
 			<input type="number" name="synapse_preneuron1" 
 			min="1" max="2" value="1" id="idSynapsePreneuron1" style="width:50px"></td>
-		    <td>シナプス後ニューロンの番号
+		    <td>後ニューロン番号
 			<input type="number" name="synapse_postneuron1" 
 			min="1" max="2" value="2" id="idSynapsePostneuron1" style="width:50px"></td>
-                    <td>重み付け
-                        <input type="number" name="synapse_connect" min="-10.0" max="10" 
-			step="0.1" value="0.4" id="idSynapseConnect1" style="width:50px"></td>
-		    <td>時定数
-			<input type="number" name="synapse_tau1" min="1" max="10" 
-			step="0.1" value="3.0" id="idSynapseTau1" style="width:50px">mS</td>
+                    <td>
+                        <label>神経伝達物質<input type="radio" name="SynapseType1" id="idSynapseTypeE1" value="E" checked>興奮性</label>
+                        <label><input type="radio" name="SynapseType1" id="idSynapseTypeI1" value="I">抑制性</label>
+                        <br>放出速度（相対値）
+                        <input type="number" name="synapse_connect" min="0" max="10" 
+			step="0.1" value="0.4" id="idSynapseConnect1" style="width:50px">
+                    半減期 <input type="number" name="synapse_tau1" min="1" max="10" 
+			step="0.1" value="2.1" id="idSynapseTau1" style="width:50px">m秒</td>
 		    <td>伝達の遅れ
 			<input type="number" name="synapse_delay1" min="1.0" max="20.0" step="0.1" 
-			value="1.0" id="idSynapseDelay1" style="width:50px">mS</td>
+			value="1.0" id="idSynapseDelay1" style="width:50px">m秒</td>
                  </tr>
             </tbody>
         </table>
+<br>
+
     </div>
 
     <table>
@@ -130,7 +130,7 @@ td    {font-size: 10pt;}
 	    <td>シミュレーション時間</td>
             <td>
                 <input type="number" id="idSimulationTime" min="50" max="500" step="50"
-		 value="50" style="width:50px">mS
+		 value="50" style="width:50px">m秒
             </td>
             <td>長さ
                 <input type="number" id="idSimulationWidth" min="400" max="2000" step="100"
@@ -139,6 +139,9 @@ td    {font-size: 10pt;}
             <td>高さ
                 <input type="number" id="idSimulationHeight" min="40" max="200" step="10"
 		value="80" style="width:50px">px  
+            </td>
+            <td>
+                <label><input type="checkbox" id="idShowThreshold" checked> 閾値を表示</label>
             </td>
             <td>
                 <input type="button" value="シミュレーション実行" onClick="simulation_start()">
@@ -232,32 +235,6 @@ function neuronAdd(){
                 mycurrent_cell.appendChild(currenttext);
            // TDセルをTR行に付加
             mycurrent_row.appendChild(mycurrent_cell);
-                // -------------------------------------------------
-                // タグ名がTDである要素を生成
-                mycurrent_cell=document.createElement("TD");
-                // テキストノードを生成
-                currenttext=document.createTextNode("相対不応期の時定数");
-                // テキストノードをTDセルに付加
-                mycurrent_cell.appendChild(currenttext);
-                // フォームノードを生成
-                mycurrent_form=document.createElement("INPUT");
-                mycurrent_form.setAttribute("type","number");
-                mycurrent_form.setAttribute("name","n_tau" + neuron_num);
-                mycurrent_form.setAttribute("value","2.5");
-		mycurrent_form.setAttribute("min","1");
-		mycurrent_form.setAttribute("max","20");
-		mycurrent_form.setAttribute("step","0.1");
-                mycurrent_form.setAttribute("id", "id_n_tau"+neuron_num);
-		mycurrent_form.setAttribute("style","width:50px");
-                // フォームノードをTDセルに付加
-                mycurrent_cell.appendChild(mycurrent_form);
-                 // テキストノードを生成
-                currenttext=document.createTextNode("mS");
-                // テキストノードをTDセルに付加
-                mycurrent_cell.appendChild(currenttext);
-           // TDセルをTR行に付加
-            mycurrent_row.appendChild(mycurrent_cell);
-
 	//----------------------------------------------------------------------
         // TR行をTBODYに追加
         mybody.appendChild(mycurrent_row);
@@ -287,7 +264,7 @@ function neuronAdd(){
 		element.max=neuron_num;
 	}
 	//---------------------------------------------------------
-	//シナプス前ニューロンとシナプス後ニューロンの番号を変更
+	//シナプス前ニューロンとシナプス後ニューロンを変更
 	for (i=1;i<synapse_num+1;i++){
 		element1=document.getElementById("idSynapsePreneuron"+i);
 		element2=document.getElementById("idSynapsePostneuron"+i);
@@ -344,7 +321,7 @@ function neuronAdd(){
                 mycurrent_form.setAttribute("type","number");
                 mycurrent_form.setAttribute("name","StimNeuron" + stim_num);
                 mycurrent_form.setAttribute("value","1");
-		mycurrent_form.setAttribute("min","1");
+		mycurrent_form.setAttribute("min","2");
 		mycurrent_form.setAttribute("max",neuron_num);
                 mycurrent_form.setAttribute("id", "idStimNeuron"+stim_num);
 		mycurrent_form.setAttribute("style","width:50px");
@@ -356,22 +333,22 @@ function neuronAdd(){
                 // 
                 mycurrent_cell=document.createElement("TD");
                 // 
-                currenttext=document.createTextNode("周波数");
+                currenttext=document.createTextNode("刺激間隔");
                 // 
                 mycurrent_cell.appendChild(currenttext);
                 // 
                 mycurrent_form=document.createElement("INPUT");
                 mycurrent_form.setAttribute("type","number");
                 mycurrent_form.setAttribute("name","StimFre" + stim_num);
-                mycurrent_form.setAttribute("value","100");
-		mycurrent_form.setAttribute("min","1");
-		mycurrent_form.setAttribute("max","500");
+                mycurrent_form.setAttribute("value","10");
+		mycurrent_form.setAttribute("min","2");
+		mycurrent_form.setAttribute("max","1000");
                 mycurrent_form.setAttribute("id", "idStimFre"+stim_num);
 		mycurrent_form.setAttribute("style","width:50px");
                 //
                 mycurrent_cell.appendChild(mycurrent_form);
                 // 
-                currenttext=document.createTextNode("Hz");
+                currenttext=document.createTextNode("m秒");
                 //
                 mycurrent_cell.appendChild(currenttext);
             //
@@ -386,16 +363,16 @@ function neuronAdd(){
                 // 
                 mycurrent_form=document.createElement("INPUT");
                 mycurrent_form.setAttribute("type","number");
-                mycurrent_form.setAttribute("name","StimStart" + stim_num);
+                mycurrent_form.setAttribute("name","Stim秒tart" + stim_num);
                 mycurrent_form.setAttribute("value","0");
 		mycurrent_form.setAttribute("min","0");
-		mycurrent_form.setAttribute("max","500");
-                mycurrent_form.setAttribute("id", "idStimStart"+stim_num);
+		mycurrent_form.setAttribute("max","1000");
+                mycurrent_form.setAttribute("id", "idStim秒tart"+stim_num);
 		mycurrent_form.setAttribute("style","width:50px");
                 // 
                 mycurrent_cell.appendChild(mycurrent_form);
                 // ?e?L?X?g?m?[?h? ￢?μ??・?B
-                currenttext=document.createTextNode("mS");
+                currenttext=document.createTextNode("m秒");
                 // 
                 mycurrent_cell.appendChild(currenttext);
             // 
@@ -413,13 +390,13 @@ function neuronAdd(){
                 mycurrent_form.setAttribute("name","StimCont" + stim_num);
                 mycurrent_form.setAttribute("value","0");
 		mycurrent_form.setAttribute("min","0");
-		mycurrent_form.setAttribute("max","500");
+		mycurrent_form.setAttribute("max","1000");
                 mycurrent_form.setAttribute("id", "idStimCont"+stim_num);
 		mycurrent_form.setAttribute("style","width:50px");
                 // 
                 mycurrent_cell.appendChild(mycurrent_form);
                 // 
-                currenttext=document.createTextNode("mS(連続は0)");
+                currenttext=document.createTextNode("m秒(連続は0)");
                 // 
                 mycurrent_cell.appendChild(currenttext);
             // 
@@ -463,8 +440,7 @@ function neuronAdd(){
             mycurrent_row.setAttribute("id","synapseTablerow"+synapse_num);
                 // -----------------------------------------------------
                 // 
-                mycurrent_cell=document.createElement("TD");
-                //
+                mycurrent_cell=document.createElement("TD");                //
                 currenttext=document.createTextNode("シナプスの番号");
                 // 
                 mycurrent_cell.appendChild(currenttext);
@@ -483,16 +459,13 @@ function neuronAdd(){
                 // -----------------------------------------------------
                 // 
                 mycurrent_cell=document.createElement("TD");
-                // 
-                currenttext=document.createTextNode("シナプス前ニューロンの番号");
-                // 
+                currenttext=document.createTextNode("前ニューロン番号");
                 mycurrent_cell.appendChild(currenttext);
-                // ?t?H?[??m?[?h? ￢?μ??・
                 mycurrent_form=document.createElement("INPUT");
                 mycurrent_form.setAttribute("type","number");
                 mycurrent_form.setAttribute("name","SynapsePreneuron" + synapse_num);
                 mycurrent_form.setAttribute("value","1");
-		mycurrent_form.setAttribute("min","1");
+		mycurrent_form.setAttribute("min","2");
 		mycurrent_form.setAttribute("max",neuron_num);
                 mycurrent_form.setAttribute("id", "idSynapsePreneuron"+synapse_num);
 		mycurrent_form.setAttribute("style","width:50px");
@@ -504,7 +477,7 @@ function neuronAdd(){
                 // 
                 mycurrent_cell=document.createElement("TD");
                 //
-                currenttext=document.createTextNode("シナプス後ニューロンの番号");
+                currenttext=document.createTextNode("後ニューロン番号");
                 // 
                 mycurrent_cell.appendChild(currenttext);
                 // 
@@ -512,7 +485,7 @@ function neuronAdd(){
                 mycurrent_form.setAttribute("type","number");
                 mycurrent_form.setAttribute("name","SynapsePostneuron" + synapse_num);
                 mycurrent_form.setAttribute("value","2");
-		mycurrent_form.setAttribute("min","1");
+		mycurrent_form.setAttribute("min","2");
 		mycurrent_form.setAttribute("max",neuron_num);
                 mycurrent_form.setAttribute("id", "idSynapsePostneuron"+synapse_num);
 		mycurrent_form.setAttribute("style","width:50px");
@@ -520,53 +493,73 @@ function neuronAdd(){
                 mycurrent_cell.appendChild(mycurrent_form);
             //
             mycurrent_row.appendChild(mycurrent_cell);
+
                 // -----------------------------------------------------
-                // 
+                
+                // -----------------------------------------------------
+                // シナプスの種類（興奮性/抑制性）＋放出速度（相対値）
                 mycurrent_cell=document.createElement("TD");
-                // 
-                currenttext=document.createTextNode("重み付け");
-                // 
-                mycurrent_cell.appendChild(currenttext);
-                //
+				// ★追加：神経伝達物質
+				mycurrent_cell.appendChild(document.createTextNode("神経伝達物質"));
+
+                // 興奮性（デフォルト）
+                var radioE=document.createElement("INPUT");
+                radioE.setAttribute("type","radio");
+                radioE.setAttribute("name","SynapseType" + synapse_num);
+                radioE.setAttribute("id","idSynapseTypeE" + synapse_num);
+                radioE.setAttribute("value","E");
+                radioE.checked=true;
+
+                var labelE=document.createElement("LABEL");
+                labelE.appendChild(radioE);
+                labelE.appendChild(document.createTextNode("興奮性 "));
+                mycurrent_cell.appendChild(labelE);
+
+                // 抑制性
+                var radioI=document.createElement("INPUT");
+                radioI.setAttribute("type","radio");
+                radioI.setAttribute("name","SynapseType" + synapse_num);
+                radioI.setAttribute("id","idSynapseTypeI" + synapse_num);
+                radioI.setAttribute("value","I");
+
+                var labelI=document.createElement("LABEL");
+                labelI.appendChild(radioI);
+                labelI.appendChild(document.createTextNode("抑制性"));
+                mycurrent_cell.appendChild(labelI);
+
+                // 伝達効率
+                mycurrent_cell.appendChild(document.createElement("BR"));
+                mycurrent_cell.appendChild(document.createTextNode("放出速度（相対値）"));
+
                 mycurrent_form=document.createElement("INPUT");
                 mycurrent_form.setAttribute("type","number");
                 mycurrent_form.setAttribute("name","SynapseConnect" + synapse_num);
                 mycurrent_form.setAttribute("value","0.4");
-		mycurrent_form.setAttribute("min","-10.0");
-		mycurrent_form.setAttribute("max","10");
-		mycurrent_form.setAttribute("step","0.1");
-                mycurrent_form.setAttribute("id", "idSynapseConnect"+synapse_num);
-		mycurrent_form.setAttribute("style","width:50px");
-                // 
+                mycurrent_form.setAttribute("min","0");
+                mycurrent_form.setAttribute("max","10");
+                mycurrent_form.setAttribute("step","0.1");
+                mycurrent_form.setAttribute("id","idSynapseConnect" + synapse_num);
+                mycurrent_form.setAttribute("style","width:50px");
                 mycurrent_cell.appendChild(mycurrent_form);
-            //
-            mycurrent_row.appendChild(mycurrent_cell);
-                // -----------------------------------------------------
-                // 
-                mycurrent_cell=document.createElement("TD");
-                // 
-                currenttext=document.createTextNode("時定数");
-                // 
+
+                // 半減期（放出速度と同じセルに表示）
+                currenttext=document.createTextNode("半減期 ");
                 mycurrent_cell.appendChild(currenttext);
-                //
-                mycurrent_form=document.createElement("INPUT");
-                mycurrent_form.setAttribute("type","number");
-                mycurrent_form.setAttribute("name","SynapseTau" + synapse_num);
-                mycurrent_form.setAttribute("value","1");
-		mycurrent_form.setAttribute("min","1");
-		mycurrent_form.setAttribute("max","10");
-		mycurrent_form.setAttribute("value","3.0");
-                mycurrent_form.setAttribute("id", "idSynapseTau"+synapse_num);
-		mycurrent_form.setAttribute("style","width:50px");
-                // 
-                mycurrent_cell.appendChild(mycurrent_form);
-                // 
-                currenttext=document.createTextNode("mS");
-                // 
+                mytau_form=document.createElement("INPUT");
+                mytau_form.setAttribute("type","number");
+                mytau_form.setAttribute("name","SynapseTau" + synapse_num);
+                mytau_form.setAttribute("min","1");
+                mytau_form.setAttribute("max","10");
+                mytau_form.setAttribute("step","0.1");
+                mytau_form.setAttribute("value","2.1");
+                mytau_form.setAttribute("id","idSynapseTau"+synapse_num);
+                mytau_form.setAttribute("style","width:50px");
+                mycurrent_cell.appendChild(mytau_form);
+                currenttext=document.createTextNode("m秒");
                 mycurrent_cell.appendChild(currenttext);
-            //
-            mycurrent_row.appendChild(mycurrent_cell);
-                // -------------------------------------------------
+
+                mycurrent_row.appendChild(mycurrent_cell);
+// -------------------------------------------------
                 // 
                 mycurrent_cell=document.createElement("TD");
                 // 
@@ -587,7 +580,7 @@ function neuronAdd(){
                 //
                 mycurrent_cell.appendChild(mycurrent_form);
                  // 
-                currenttext=document.createTextNode("mS");
+                currenttext=document.createTextNode("m秒");
                 // 
                 mycurrent_cell.appendChild(currenttext);
            // 
@@ -632,10 +625,12 @@ function simulation_start(){
 	var	N0 = stim_num;				//刺激装置の数
 	var	N1 = synapse_num;			//シナプスの数
 	var	EE = 100;				//パルスの高さ（mV）
-	var	WW = 1.0;					//パルスの幅（mS）
-	var	dt = 0.01;				//単位時間（mS）
+	var	WW = 1.0;					//パルスの幅（m秒）
+	var	dt = 0.01;				//単位時間（m秒）
+	var	LN2 = Math.log(2);
+	var	showThreshold = $('idShowThreshold') ? $('idShowThreshold').checked : false;
 //	var	delay = 2/dt;				//遅れ(単位時間数)
-	var	TT = parseInt($('idSimulationTime').value);	//シミュレーション時間(mS)
+	var	TT = parseInt($('idSimulationTime').value);	//シミュレーション時間(m秒)
 //	var	t_H1 = WW/dt;			//パルスのオンの時間（単位時間数）
 //-----------------------------------------------------------------------------
 	var	S0 = new Array();
@@ -649,8 +644,8 @@ function simulation_start(){
 	var	S8 = new Array();
 	var	S9 = new Array();
 	for(i=1;i<N+N0+1;i++){
-		S0[i] = new Array();		//重み付け　興奮性　抑制性　結合なし
-		S1[i] = new Array(); 		//時定数
+		S0[i] = new Array();		//伝達効率　興奮性　抑制性伝達物質伝達物質　結合なし
+		S1[i] = new Array(); 		//半減期
 		S2[i] = new Array();		//シナプス後電位
 		S3[i] = new Array();		//シナプス前電位（０かEE)
 		S4[i] = new Array();		//パルスオン時のシナプス後電位
@@ -668,27 +663,32 @@ function simulation_start(){
 	for(t=1;t<N1+1;t++){
 		i=parseInt($('idSynapsePreneuron'+t).value);
 		j=parseInt($('idSynapsePostneuron'+t).value);
-		S0[i][j]=parseFloat($('idSynapseConnect'+t).value);
-		S1[i][j]=parseFloat($('idSynapseTau'+t).value)/dt;
+		var eff = parseFloat($('idSynapseConnect'+t).value);
+		var typeEl = document.querySelector('input[name="SynapseType'+t+'"]:checked');
+		var sign = (typeEl && typeEl.value === 'I') ? -1 : 1;
+		S0[i][j]=sign*eff;
+		S1[i][j]=(parseFloat($('idSynapseTau'+t).value)/LN2)/dt; // 入力は半減期(ms)
 		S6[i][j]=parseFloat($('idSynapseDelay'+t).value)/dt;
 	}
 //------------------------------------------------------------------------------
 	var	Ho = new Array();		//静止閾値
-	var	Htau = new Array();		//相対不応期時定数
+	var	Htau = new Array();		//相対不応期半減期
 	for(j=1;j<N+1;j++){
 		Ho[j]=parseInt($('id_n_thre'+j).value);
-		Htau[j]=parseFloat($('id_n_tau'+j).value);
+		Htau[j] = 1.7 / LN2; // 半減期[m秒]→時定数（旧挙動互換）; // 入力は半減期(ms)
 	}
 //-------------------------------------------------------------------------------
 	var	AX = new Array();		//ニューロンjの軸索起部電位（０かEE）
 	var	H = new Array();		//ニューロンjの閾値(変数)
 	var	Ht = new Array();		//ニューロンjのスパイク発生後の時間(相対値)
+	var	Hplot = new Array();		//描画用：閾値の時系列（表示する点のみ）
 	var	P = new Array();		//ニューロンjの細胞体電位
 	var	P1 = new Array();		//細胞体電位（作業用）
 	for (i=1; i < N+N0+2; i++){     	
 		H[i] = 0;	Ht[i] = -1;
 		P[i] = new Array();
 		AX[i] = new Array();
+		Hplot[i] = new Array();
 	}
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //刺激装置
@@ -700,16 +700,16 @@ function simulation_start(){
 	var	ST5 = new Array();
 	for (i = N + 1; i < N + N0 +1; i++){
 		ST0[i] = 0;			//接続するニューロンの番号
-		ST1[i] = 0;		 　　	//周波数（Hz）最大500Hz
+		ST1[i] = 0;		 　　	//刺激間隔（m秒）最小2m秒（=500Hz）
 		ST2[i] = 0;			//開始時間（ms）
-		ST3[i] = 0;			//持続時間（ms）ただし連続は０　最小2mS
+		ST3[i] = 0;			//持続時間（ms）ただし連続は０　最小2m秒
 		ST4[i] = 0;			//次のパルスオンまでの時間（相対値）
 		ST5[i] = 0;			//次のパルスオフまでの時間（相対値）
 	}
 	for(i=1;i<N0+1;i++){
 		ST0[i+N]=parseInt($('idStimNeuron'+i).value);
 		ST1[i+N]=parseInt($('idStimFre'+i).value);
-		ST2[i+N]=parseInt($('idStimStart'+i).value);
+		ST2[i+N]=parseInt($('idStim秒tart'+i).value);
 		ST3[i+N]=parseInt($('idStimCont'+i).value);
 	}
 	//---------------------------------------------------------------------
@@ -717,15 +717,17 @@ function simulation_start(){
 	for(i=N+1; i<N+N0+1; i++){
 	    j=ST0[i];
 	    if (j > 0){			//接続するニューロンがある場合
-		S0[i][j]=0.4;		//重み付けを2に設定
-		S1[i][j]=1.0/dt;	//時定数を1mSに設定
+		S0[i][j]=0.4;		//伝達効率を2に設定
+		S1[i][j]=(1.0/LN2)/dt;	//半減期を1m秒に設定
 		if (ST2[i]==0){		//開始時間が０の場合
 			ST5[i]=WW/dt;		//パルスオフまでの時間セット(相対値)
 		} else {		//開始時間が０でない場合
 			ST4[i]=ST2[i]/dt+1;	//パルスオンまでの時間セット(相対値)
 		}
 	    }
-	    S7[i][j][0]=P[i][0]=0;		//シナプス入力電位
+	    S7[i][j][0]=P[i][0]=0;
+    	// 初期閾値（通常）
+    	Hplot[i][0] = (showThreshold && Ho[i] <= EE) ? Ho[i] : null;		//シナプス入力電位
 	}
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //活動電位の波形
@@ -741,6 +743,8 @@ function simulation_start(){
   for(i=1;i<N+1;i++){
     AX[i][0]=0;
     P[i][0]=0;
+    	// 初期閾値（通常）
+    	Hplot[i][0] = (showThreshold && Ho[i] <= EE) ? Ho[i] : null;
     for(j=1;j<N+1;j++){
 	if(S0[i][j] != 0){
 		for(t=0;t<=S6[i][j];t++){S7[i][j][t]=0;}
@@ -769,7 +773,7 @@ for (t=1; t<TT/dt; t++){		//メインループ
 	P[i][t]=S7[i][j][t]=EE;
 	ST5[i]--;　	//オフまでの時間を１減少
 	if (ST5[i] <= 0){		//オフまでの時間が０になった場合
-		ST4[i]=Math.round(1000/dt/ST1[i]-WW/dt)+1;	//次のオンまでの時間セット
+		ST4[i]=Math.round(ST1[i]/dt-WW/dt)+1;	//次のオンまでの時間セット
 		P[i][t]=S7[i][j][t]=0;	
 	}
 	if (ST3[i]>0){  //持続時間が設定されている場合
@@ -801,6 +805,9 @@ for (t=1; t<TT/dt; t++){		//メインループ
     } else {
 	H[i]=Ho[i];	//静止閾値
     }
+	// 閾値表示用（薄赤）：絶対不応期相当(閾値がピーク以上)は表示しない
+	Hplot[i][t] = (showThreshold && H[i] <= EE) ? H[i] : null;
+
   }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -894,7 +901,8 @@ for (t=1; t<TT/dt; t++){		//メインループ
 //                   CANVASに描画
 //****************************************************************************************
   var	Sim_Width = parseInt($('idSimulationWidth').value);
-  var   c_width = 50+Sim_Width;
+  var   scale_margin = 140; // 右側に電位スケール用の余白
+  var   c_width = 50+Sim_Width+scale_margin;
   var	Sim_Height = parseInt($('idSimulationHeight').value);
   var   c_height = (Sim_Height*1.3*N+Sim_Height*0.5+30); //????????????????????????????????
  
@@ -904,7 +912,7 @@ for (t=1; t<TT/dt; t++){		//メインループ
   canvas.setAttribute('width',c_width);
   canvas.setAttribute('height',c_height);
   ctx.beginPath();
-  ctx.fillStyle="#FFFF00";
+  ctx.fillStyle="#FFF9E6";
   ctx.fillRect(0,0,c_width,c_height);
   ctx.stroke();
   ctx.font = "20pt Arial";
@@ -924,13 +932,55 @@ for(j=1;j<N+1;j++){
 	}
 	ctx.stroke();
 }
+	// --- 閾値表示（薄い赤）：相対不応期での閾値のみ表示 ---
+	if (showThreshold){
+		for(j=1;j<N+1;j++){
+			ctx.beginPath();
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = "rgba(255,0,0,0.25)";
+			var started = false;
+			for (t=0; t<TT/dt; t++){
+				var hv = Hplot[j][t];
+				if (hv === null || hv === undefined){
+					if (started){ ctx.stroke(); started = false; ctx.beginPath(); }
+					continue;
+				}
+				var x = 50 + t/(TT/dt)*Sim_Width;
+				var y = Sim_Height*j*1.3 - hv*Sim_Height/EE;
+				if (!started){ ctx.moveTo(x,y); started = true; }
+				else { ctx.lineTo(x,y); }
+			}
+			if (started){ ctx.stroke(); }
+		}
+	}
 	ctx.moveTo(50+Sim_Width*0.9,Sim_Height*N*1.3+Sim_Height*0.5);
 	ctx.lineTo(50+Sim_Width,Sim_Height*N*1.3+Sim_Height*0.5);
 	ctx.stroke();
 	ctx.beginPath();
 	ctx.font = "14pt Arial";
-  	ctx.fillText((TT/10)+"mS", 50+Sim_Width-60, Sim_Height*N*1.3+Sim_Height*0.5+20);
+  	ctx.fillText((TT/10)+"m秒", 50+Sim_Width-60, Sim_Height*N*1.3+Sim_Height*0.5+20);
   	ctx.stroke();
+	// --- 電位スケール（10 mV） ---
+	var xScale = 50 + Sim_Width + 40;
+	var yBase  = Sim_Height * 1.3; // N1のベースライン付近
+	var barLen = (10.0/EE) * Sim_Height; // 10 mV に相当するピクセル長
+	ctx.beginPath();
+	ctx.strokeStyle = "blue";
+	ctx.lineWidth = 2;
+	ctx.moveTo(xScale, yBase);
+	ctx.lineTo(xScale, yBase - barLen);
+	// 端のキャップ
+	ctx.moveTo(xScale-8, yBase);
+	ctx.lineTo(xScale+8, yBase);
+	ctx.moveTo(xScale-8, yBase - barLen);
+	ctx.lineTo(xScale+8, yBase - barLen);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.font = "14pt Arial";
+	ctx.fillStyle="blue";
+	ctx.fillText("10 mV", xScale + 12, yBase - barLen/2 + 5);
+	ctx.stroke();
+
 //******************************************************************************
 }
 //-->
