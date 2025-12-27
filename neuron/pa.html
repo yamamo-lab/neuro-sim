@@ -1,0 +1,993 @@
+<!-- Hodgkin-Huxley方程式による興奮の伝導 -->
+<!--
+copyright (c) 2020 Takayuki Yamamoto
+Released under the MIT license.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+<!--	<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes"/>  -->
+	<meta name="viewport" content="width=device-width">
+	<title>Excitatory Conduction</title>
+	<style type="text/css">
+			body{background-color:#ffd700;}<!-- #66cdaa -->
+	</style>
+</head>
+<body>
+	
+	<form name="form" onsubmit="return false">
+
+
+	Graph size T: <input type="number" id="idGraphWidth" min="200" max="1000" step="20" value="260" style="width:50px" 
+	    onchange="draw_axis();"><label for="idGraphWidth">px, </label>
+	V:<input type="number" id="idv_height" min="50" max="200" step="10" 
+		value="200" style="width:50px" onchange="draw_axis();">px<br>
+	Rec.:
+	  <input type="number" id="idRec" min="0" max="100" step="1"
+	    value="10" style="width:40px" onchange="onchange_Rec();">mm  	Temp<input type="number" id="idTemperature" min="0" max="33" step=".1" style="width:40px">&nbsp;&deg;C
+	<label><input type="checkbox" id="Checkbox7"  onchange="draw_axis();">Grid</label><br>
+	Time
+	  <input id="Radio5ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="5ms" />
+        <label for="Radio5ms">5ms</label>
+ 	  <input id="Radio10ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" checked="checked" value="10ms" />
+        <label for="Radio10ms" >10ms</label>
+	  <input id="Radio15ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="15ms" />
+        <label for="Radio15ms">15ms</label>
+	  <input id="Radio20ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="20ms" />
+	    <label for="Radio20ms">20ms</label>
+	<br>
+	Stim:
+      <input type="number" id="idCamplitude1" min="-40" max="100.0" step="0.2"
+		value="30.0" style="width:50px" onchange="onchange_check1;"> &mu;A:
+      <input type="number" id="idCduration1" min="0" max="50.0" step="0.2"
+		value="0.1" style="width:40px" onchange="onchange_check1;"> ms 
+	  <input type="checkbox" id="idTextOut" onclick="onclick_textout();" >text out
+	<br>
+
+	<input type="button" id="idSimulation" value="Simulate" onClick="simulation_start()">
+	<input type="button" value=" CLS" id="idcls" onClick="draw_axis()">
+	<input type="button" value="animation" id="idanime" onClick="animation()">
+	<br>
+	
+	<canvas id="a_canvas" width="360" height="720"></canvas>
+<!--**************************************************************** -->
+<script type="text/javascript"><!--
+	window.addEventListener('load',function(){
+		load();
+		draw_axis();
+		idanime.disabled=true;
+		document.getElementById('idSimulation').style.backgroundColor = 'rgb(204,255,204)';
+
+	});
+	var A=0.0238; //0.1-0.0238
+	var R = 30; //
+	var Vrest=-60;
+	var dt = 0.001; // 0.0005-0.01ms 0.0025
+	var tstep=50; //dt*tstepアニメーション時間間隔
+	var dx = 0.05; // 0.02cm 0.05
+	var L = 12; //cm
+	var Cm = 1;
+	var Gna0 = 120;
+	var Gk0 = 36;
+	var Gl0 = 0.3;
+	var Vna = 115;
+	var Vk = -12;
+	var Vl = 10.613; //10.613
+	var pi = 3.14159265358979;
+	var theta = 6.3;
+	var err = 0.001;
+	var seg0 = 0;
+	var Ek = Vk+Vrest, Ena = Vna+Vrest, El = Vl+Vrest;
+	var lambda,taum,taui,Temp;
+	var Gna,Gk;
+	var dVm, ddVm, Vm;
+	var Il, Im, Ik, Ina, Ii;
+	var n, m, h;
+	var na, nb, ma, mb, ha, hb, Vma, Vmb;
+	var t, tstop, lend;
+	var An, Bn, Am, Bm, Ah, Bh;
+	var J, i, x, phi, iSeg, iStep, i1, i2;
+	var D, G, U;
+	
+	var Sim_Width=260;
+	var c_x0=50;//時間軸左
+	var c_width = c_x0+Sim_Width+50;
+	var Sim_Height=520;
+	var a_y0=30;//軸索上
+	var a_height=20;//軸索高さ
+	var c_y0=60;//電位軸１上
+	var c_y1=c_y0+100;//電位軸１下 120
+	var c_y2=c_y0+c_y1-Vrest*(c_y1/80);
+    var c_height = c_y0+ Sim_Height+70;	
+	var i_height,i_height_data;
+	var i_x0=c_x0;    //電位軸２
+	var i_y0;//電位軸２上
+	var i_y1;//電位軸２下
+	var p_height=200;		//位相面
+	var p_y0=i_y1+p_height+70;	//位相面
+	var v_height=210;
+	var Vscale = v_height/7;//電位軸１目盛px
+	var t_x0=c_x0;
+	var t_y0=i_y1+30;
+	var temp, temp_data;
+	var Camplitude1,Camplitude2;
+	var Cduration1,Cduration2;
+	var Camplitude1_data,Cduration1_data;
+	var Rec,Rec_data;
+	var Interval_data;
+	var Interval;
+	var width,width_data;
+	var TEAratio_data,TTXratio_data;
+	var flag_draw_Gaxis=false;
+	var flag_draw_pAxis=false;
+	var flag_simulated=false;
+	var tstop=8;
+//	var check1;
+//	var check1_data;
+	var check_TEA, check_TTX;
+	var check_TEA_data,check_TEA,idCheck_TEA;
+	var check_TTX_data,check_TTX,idCheck_TTX;
+	var Gna0bairitu, Gk0bairitu;
+	var check7_data,check8_data;
+	var check7="false";
+	var check8="false";
+	var chk_n_data="false"; 
+	var chk_m_data="false"; 
+	var chk_h_data="false";
+	var chk_n="false"
+	var chk_m="false"
+	var chk_h="false"
+	var data_2ms,data_5ms,data_10ms,data_15ms,data_20ms;
+	var data_Single,data_Double;
+	var Stim_Num=1;
+	var data_10uA,data_100uA,data_1000uA;
+	var Vm,newVm;
+	var Ik,Ina,Il;
+	var Im,Ichannel,Istim;
+	var Am,Bm,An,Bn,Ah,Bh;
+	var m,n,h;
+	var V =	new Array();
+	var Vm1 = new Array();
+	var dVm1 = new Array();
+	var Vm1_new = new Array();
+	var Ii1 = new Array();
+	var Im1 = new Array();
+	var Ik1 = new Array()
+	var Ina1 = new Array();
+	var Gna1 = new Array();
+	var Gk1 = new Array();
+	var Istim1 = new Array();
+	var Is1 = new Array();
+	var n1 = new Array();
+	var m1 = new Array();
+	var h1 = new Array();
+	var n1_new = new Array();
+	var m1_new = new Array();
+	var h1_new = new Array();
+	var dn1 = new Array();
+	var dm1 = new Array();
+	var dh1 = new Array();
+	var S =	new Array();
+	var Gmna =	new Array();
+	var Gmk	 =	new Array();
+	var I_k	= new Array();
+	var I_na =	new Array();
+//	var I_m	= new Array();
+	var n1 = new Array();
+	var m1 = new Array();
+	var h1 = new Array();
+	var x1,y1,x2,y2,Vm_y1,Vm_y2,Gna_y1,Gk_y1;
+	var Timer1;
+//canvas要素を取得
+//	var canvas = document.getElementById("a_canvas");
+	function $(id){ return document.getElementById(id);}
+	var canvas = $('a_canvas'); //  
+	var ctx = canvas.getContext('2d');	//描画用のコンテキストを取得
+//
+
+
+//  **************************************************
+//  **                                              **
+//  **               読み込み                          **
+//  **                                              **
+//  **************************************************
+function load(){
+// 温度データ読み込み　--------------------------------------------------
+	var n=localStorage.temp_data;
+	if(isNaN(n)){
+		n = parseFloat($('idTemperature').value)
+	}	
+	if(n){
+		var temp=Number(n);
+	}else{
+		var temp=Math.round(Math.random()*(150-50+1)+50);
+	}
+	idTemperature.value=temp/10
+	localStorage.temp_data=temp;
+// グラフ幅読み込み　----------------------------------------------------
+	n=localStorage.width_data;
+	if(isNaN(n)){
+		n = parseFloat($('idGraphWidth').value);
+	}
+	if(n){
+		width=Number(n);
+	}else{
+		width=260;
+	}
+	idGraphWidth.value=width;
+	localStorage.width_data=width;
+// 電位軸高さ読み込み　----------------------------------------------------
+	n=localStorage.v_height_data;
+	if(isNaN(n)){
+		n = parseFloat($('idv_height').value);
+	}
+	if(n){
+		v_height=Number(n);
+		if(v_height<80){v_height=80;}
+		if(v_height>300){v_height=300;}
+	}else{
+		v_height=210;
+	}
+	Vscale=v_height/7;
+	idv_height.value=v_height;
+	localStorage.v_height_data=v_height;
+// 定電流刺激強度1読み込み　------------------------------------------------
+	n=localStorage.Camplitude1_data;
+	if(isNaN(n)){
+		n = parseFloat($('idCamplitude1').value)
+	}
+	if(n){
+		Camplitude1=Number(n);
+	}else{
+		Camplitude1=10;
+	}
+	idCamplitude1.value=Camplitude1;
+	localStorage.Camplitude1_data=Camplitude1;
+// 定電流刺激幅1読み込み　-------------------------------------------------
+	n=localStorage.Cduration1_data;
+	if(isNaN(n)){
+		n = parseFloat($('idCduration1').value)
+	}
+
+	if(n){
+		Cduration1=Number(n);
+	}else{
+		Cduration1=1;
+	}
+	idCduration1.value=Cduration1;
+	localStorage.Cduration1_data=Cduration1;
+// 記録電極位置読み込み ------------------------------------------------
+	n=localStorage.Rec_data;
+	if(isNaN(n)){
+		n=parseFloat($('idRec').value)
+	}
+	if(n){
+		Rec=Number(n);
+	}else{
+		Rec=10;
+	}
+	idRec.value=Rec;
+	localStorage.Rec_data=Rec;
+//グリッド表示読み込み---------------------------------------
+	var c=localStorage.check7_data;
+	if(c =="false"){$('Checkbox7').checked=false}
+	if(c == "true"){$('Checkbox7').checked=true}
+//時間軸読み込み--------------------------------------------
+	var c5=localStorage.data_5ms;
+	if(c5 =="true"){$('Radio5ms').checked=true}
+	var c10=localStorage.data_10ms;
+	if(c10 =="true"){$('Radio10ms').checked=true}
+	var c15=localStorage.data_15ms;
+	if(c15 =="true"){$('Radio15ms').checked=true}
+	var c20=localStorage.data_20ms;
+	if(c20 =="true"){$('Radio20ms').checked=true}
+}
+//*************************************************
+//               時間軸変更
+//*************************************************
+function onRadioButtonChange(){
+// 時間読み込み -----------------------
+	var radiobtn5ms = $("Radio5ms");
+	var radiobtn10ms = $("Radio10ms");
+	var radiobtn15ms = $("Radio15ms");
+	var radiobtn20ms = $("Radio20ms");
+//	var radiobtn50ms = $("Radio50ms");
+	data_5ms=radiobtn5ms.checked;
+	data_10ms=radiobtn10ms.checked;
+	data_15ms=radiobtn15ms.checked;
+	data_20ms=radiobtn20ms.checked;
+//	data_50ms=radiobtn50ms.checked;
+	if (radiobtn5ms.checked){tstop=5}
+	if (radiobtn10ms.checked){tstop=10}
+	if (radiobtn20ms.checked){tstop=20}
+//	if (radiobtn50ms.checked){tstop=50}
+	localStorage.data_5ms=data_5ms;
+	localStorage.data_10ms=data_10ms;
+	localStorage.data_15ms=data_15ms;
+	localStorage.data_20ms=data_20ms;
+//	localStorage.data_50ms=data_50ms;
+	idanime.disabled=true;
+	draw_axis();
+}
+//***********************************************
+//               刺激入力変更
+//***********************************************
+function onchange_check1(){
+	idanime.disabled=true;
+	if(idCamplitude1.value>2000){idCamplitude1.value=2000}
+	if(idCamplitude1.value<-40){idCamplitude1.value=-40}
+	if(idCduration1.value<0){idCduration1.value=0}
+	if(idCduration1.value>50){idCduration1.value=50}
+}
+//***********************************************
+//               記録電極位置変更
+//***********************************************
+function onchange_Rec(){
+	idanime.disabled=true;
+	if(idRec.value>100){idRec.value=100}
+	if(idRec.value<0){idRec.value=0}
+	idRec.value=parseInt(idRec.value);
+	Rec = parseFloat($('idRec').value);
+	localStorage.Rec_data=Rec;
+/*	ctx.fillStyle="#ffd700";
+	ctx.beginPath();
+	ctx.fillRect(0,0,Sim_Width,a_y0-1);
+	ctx.stroke(); */
+	draw_Rec();
+}
+//*******************************************
+//        text out
+//*******************************************
+function onclick_textout(){
+	if(flag_simulated){
+	document.write("Rec="+Rec+"mm"+"<br>");
+	document.write("Time(ms), V(mV)".fontcolor("red")+"<br>");
+	for(i=1;i<(tstop/dt+2);i=i+10){ //(tstop/dt+2);i++){
+		document.write((dt*(i-1)).toFixed(2)+","+(Vrest+Vm1[Rec*2+1][i]).toFixed(1)+"<br/>");
+		}
+	
+	document.write("<br>"+(tstop/dt/1000).toFixed(2)+"msec<br>");
+	document.write("Location(mm), V(mV)".fontcolor("red")+"<br>");
+	for(i=1;i<(10/dx+2);i++){
+		document.write(((i-1)*dx*10).toFixed(1)+","+(Vrest+Vm1[i+1][tstop/dt+1]).toFixed(2)+"<br>");		
+		}
+
+	y=(Vrest+Vm1[1][2]); 
+	for(i=1;i<(10/dx+2);i++){
+		x=i/(10/dx);
+		// y=(c_y0+Vscale*3)-(Vrest+Vm1[i][0.5/dt])*(Vscale/20);
+		y=(c_y0+v_height-(Vrest+0+80)*v_height/160);
+//		ctx.lineTo(x,y);//電位のトレース
+	}
+	document.close();
+	}
+	idTextOut.checked=false;
+}
+
+//***********************************************
+//               TEA/TTXチェック
+//***********************************************
+function onCheckBoxChange1(){
+	if($('idCheckbox_TEA').checked==true){
+		$('idTEAratio').disabled=false;
+console.log(idTEAratio.value);
+	}
+	else{
+		$('idTEAratio').value=0;
+		$('idTEAratio').disabled=true;
+	}
+	if($('idCheckbox_TTX').checked==true){
+		$('idTTXratio').disabled=false;
+	}
+	else{
+		idTTXratio.value=0;
+		$('idTTXratio').disabled=true;
+	}
+}
+//************************************************
+//               画面クリア
+//************************************************
+function draw_cls(){
+	clearInterval(Timer1);
+	flag_draw_Gaxis=false;
+	flag_draw_pAxis=false;
+//	idanime.disabled=true;
+	draw_axis();
+}
+//***********************************************
+//               記録電極位置描画
+//***********************************************
+function draw_Rec(){
+	ctx.fillStyle="black";
+	ctx.strokeStyle="black";
+	x1=c_x0+Rec/100*Sim_Width;
+	y1=5, y2=a_y0-1;
+	ctx.beginPath();
+	ctx.moveTo(x1,y2);
+	ctx.lineTo(x1+5,y1);
+	ctx.lineTo(x1-5,y1);
+	ctx.closePath();
+	ctx.strokeStyle="black";
+	ctx.fill();
+	ctx.stroke();
+}
+//************************************************
+//               軸描画
+//***********************************************
+function draw_axis(){
+//	idanime.disabled=true;
+// グラフ幅読み込み -------------------------
+	Sim_Width = parseFloat($('idGraphWidth').value);	//グラフ幅(px)
+	if(Sim_Width>2000){Sim_Width=2000}
+	if(Sim_Width<100){Sim_Width=100}
+	c_width = c_x0+Sim_Width+50;
+	canvas.setAttribute('width',c_width);
+	canvas.setAttribute('hight',c_width);
+	localStorage.width_data=Sim_Width;
+	localStorage.i_height_data=i_height;
+// 電位軸読み込み　----------------------------
+	v_height = parseFloat($('idv_height').value);
+	if(v_height>300){v_height=300}
+	if(v_height<50){v_height=50}
+	idv_height.value=v_height;
+	Vscale=v_height/7;
+	localStorage.v_height_data=v_height;
+// 時間読み込み -----------------------
+	var radiobtn5ms = $("Radio5ms");
+   	var radiobtn10ms = $("Radio10ms");
+   	var radiobtn15ms = $("Radio15ms");
+   	var radiobtn20ms = $("Radio20ms");
+//	var radiobtn50ms = $("Radio50ms");
+	data_5ms=radiobtn5ms.checked;
+	data_10ms=radiobtn10ms.checked;
+	data_15ms=radiobtn15ms.checked;
+	data_20ms=radiobtn20ms.checked;
+//	data_50ms=radiobtn50ms.checked;
+	if (radiobtn5ms.checked){tstop=5}
+	if (radiobtn10ms.checked){tstop=10}
+	if (radiobtn15ms.checked){tstop=15}
+	if (radiobtn20ms.checked){tstop=20}
+//	if (radiobtn50ms.checked){tstop=50}
+	localStorage.data_5ms=data_5ms;
+	localStorage.data_10ms=data_10ms;
+	localStorage.data_15ms=data_15ms;
+	localStorage.data_20ms=data_20ms;
+//	localStorage.data_50ms=data_50ms;
+// グリッド表示読み込み　--------------------
+	if(Checkbox7.checked){check7=true;}
+	else{check7=false}
+// 四角-------------------------------
+	ctx.fillStyle="#FFFFFF";
+	c_y1=c_y0+Vscale*7;
+	i_y0=c_y0+Vscale*7+50;
+//	i_y1=c_y0+Vscale*7+20;
+	if(chk_n==true || chk_m==true || chk_h==true){
+//		p_y0=c_y0+Vscale*7+20+i_height+p_height+70;
+		p_y0=c_y0+Vscale*7+20+p_height;
+		i_y0=p_y0+20;
+		ctx.fillRect(c_x0,p_y0,Sim_Width,-p_height);
+	}
+	
+	i_y2=i_y1+i_height;
+	c_hight=i_y2+50;
+	ctx.fillRect(c_x0,c_y0,Sim_Width,Vscale*7);　//電位１
+//	ctx.fillRect(c_x0,i_y0,Sim_Width,i_height);
+	ctx.fillRect(c_x0,i_y0,Sim_Width,Vscale*7);　//電位２
+	ctx.fillStyle="black";
+
+
+//電位軸-----------------------
+	draw_Vaxis();
+//軸索------------------------
+
+	ctx.strokeStyle="white";
+	ctx.fillStyle="white";  
+	ctx.strokeRect(c_x0, a_y0, Sim_Width, a_height);//四角形（輪郭）
+	ctx.fillRect(c_x0, a_y0, Sim_Width, a_height);//四角形（塗りつぶし）
+	ctx.stroke();
+	ctx.strokeStyle="black";
+	ctx.fillStyle="black";
+	ctx.font = "14pt bold";
+	ctx.textAlign = 'left';
+	ctx.fillText("Axon",0,a_y0+a_height/2+6);
+//	onchange_Rec();
+	draw_Rec();
+// 距離軸----------------------------
+	t_y0=c_y0+Vscale*7;
+	ctx.moveTo(c_x0,t_y0);
+	ctx.lineTo(c_x0+Sim_Width,t_y0);			//距離軸
+	for(i=0;i<11;i++){
+		ctx.moveTo(c_x0+Sim_Width/10*i,t_y0);		//距離軸目盛
+		ctx.lineTo(c_x0+Sim_Width/10*i,t_y0-5);
+	}
+	ctx.stroke();
+	ctx.font = "11pt bold" ;				//距離軸ラベル
+	ctx.fillText("0",c_x0-4,t_y0+20);           //距離軸ラベル
+	ctx.fillText("50",c_x0+Sim_Width*5/10-10,t_y0+20);	//距離軸ラベル
+	ctx.fillText("100",c_x0+Sim_Width-10,t_y0+20);  		//距離軸ラベル
+	ctx.font = "14pt bold";
+	ctx.textAlign = 'center';
+	ctx.fillText("Location(mm)",c_x0+Sim_Width*.5,t_y0+36);
+	ctx.textAlign = 'left';
+// 時間軸------------------------------------
+	t_y0=i_y1;
+	ctx.moveTo(c_x0,t_y0);
+	ctx.lineTo(c_x0+Sim_Width,t_y0);			//時間軸
+	for(i=0;i<11;i++){
+		ctx.moveTo(c_x0+Sim_Width/10*i,t_y0);		//時間軸目盛
+		ctx.lineTo(c_x0+Sim_Width/10*i,t_y0-5);
+	}
+	ctx.stroke();
+	ctx.font = "11pt bold" ;				//時間軸ラベル
+	ctx.fillText("0",c_x0-4,t_y0+20);           //時間軸ラベル
+	ctx.fillText(tstop/2,c_x0+Sim_Width*5/10-10,t_y0+20);	//時間軸ラベル
+	ctx.fillText(tstop,c_x0+Sim_Width-10,t_y0+20);  		//時間軸ラベル
+	ctx.font = "14pt bold";
+	ctx.textAlign = 'center';
+	ctx.fillText("Time(ms)",c_x0+Sim_Width*.5,t_y0+36);
+	ctx.textAlign = 'left';
+//グリッド----------------------------------------------------------
+		if (check7 == true){
+			draw_Grid();
+		}
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+}
+//*******************************************
+//               グリッド描画
+//*******************************************
+function draw_Grid(){
+//	電位軸------------------------------------
+	ctx.beginPath();
+	ctx.lineWidth=0.3;
+	var c_div=v_height/8;
+	for(i=0;i<9;i++){
+		ctx.moveTo(c_x0,c_y0+c_div*i);
+		ctx.lineTo(c_x0+Sim_Width,c_y0+c_div*i); //横軸
+	}
+	ctx.stroke();
+	y1=c_y0;
+	y2=c_y0+v_height;
+	for(i=0;i<11;i++){
+		x=c_x0+Sim_Width/10*i;
+		ctx.moveTo(x,y1);
+		ctx.lineTo(x,y2); //縦軸		
+	}
+	ctx.stroke();
+//　電位軸２（旧電流軸）---------------------------------
+	ctx.beginPath();
+	ctx.lineWidth=0.3;
+	x1=c_x0;
+	x2=c_x0+Sim_Width;
+	for(i=0;i<9;i++){
+		ctx.moveTo(c_x0,i_y0+c_div*i);
+		ctx.lineTo(c_x0+Sim_Width,i_y0+c_div*i); //横軸
+	}
+	ctx.stroke();
+
+// 時間軸（旧電流）
+	y1=i_y0;
+	y2=i_y1;
+	for(i=0;i<11;i++){
+		x=c_x0+Sim_Width/10*i;
+		ctx.moveTo(x,y1);
+		ctx.lineTo(x,y2); //垂直
+	}
+	ctx.stroke();
+
+//変数表示----------------------------------------------
+	if(chk_n==true || chk_m==true || chk_h==true){
+		ctx.lineWidth=0.3
+		// 時間軸（チャネル変数）
+		y1=p_y0;
+		y2=p_y0-p_height;
+		for(i=0;i<12;i++){
+			x=c_x0+Sim_Width/11*i;
+			ctx.moveTo(x,y1);
+			ctx.lineTo(x,y2);
+		}
+		//　変数軸
+		x1=c_x0;
+		x2=c_x0+Sim_Width;
+		for(i=0;i<11;i++){
+			y=p_y0-p_height/10*i;
+			ctx.moveTo(x1,y);
+			ctx.lineTo(x2,y);
+		}
+		ctx.stroke();
+	}	
+	
+}
+//************************************************
+//               電圧軸描画
+//************************************************
+function draw_Vaxis(){
+//電位軸-----------------------
+	ctx.fillStyle="black";
+	ctx.strokeStyle="black";
+	c_y1=v_height/2;
+	ctx.beginPath();
+	ctx.moveTo(c_x0,c_y0);//Y軸 +80mV
+	ctx.lineTo(c_x0,c_y0+v_height);//Y軸　～-80mV
+	for(i=0;i<9;i++){
+		ctx.moveTo(c_x0,c_y0+v_height/8*i);
+		ctx.lineTo(c_x0+5,c_y0+v_height/8*i);
+	}
+	ctx.stroke();
+	ctx.font="11pt bold";
+	ctx.fillText("80",20,c_y0+6);
+	ctx.fillText("40",20,c_y0+v_height/8*2+6);
+	ctx.fillText(" 0",20,c_y0+v_height/8*4+6);
+	ctx.fillText("-40",20,c_y0+v_height/8*6+6);
+	ctx.fillText("-80",20,c_y0+v_height+6);
+
+	ctx.beginPath();
+	ctx.font = "14pt bold" ;
+	ctx.save();
+	ctx.rotate(-90*Math.PI/180);
+	ctx.textAlign = 'center';
+	ctx.fillText("V(mV)",-(c_y0+v_height/2),20);
+	ctx.restore();
+	ctx.textAlign= 'left';
+//電位軸２-----------------------
+	i_y1=i_y0+v_height;
+	ctx.beginPath();
+	ctx.moveTo(c_x0,i_y0);//Y軸 +80mV
+	ctx.lineTo(c_x0,i_y0+v_height);//Y軸　～-80mV
+	for(i=0;i<9;i++){
+		ctx.moveTo(c_x0,i_y0+v_height/8*i);
+		ctx.lineTo(c_x0+5,i_y0+v_height/8*i);
+	}
+	ctx.stroke();
+	ctx.font="11pt bold";
+	ctx.fillText("80",20,i_y0+6);
+	ctx.fillText("40",20,i_y0+v_height/8*2+6);
+	ctx.fillText(" 0",20,i_y0+v_height/8*4+6);
+	ctx.fillText("-40",20,i_y0+v_height/8*6+6);
+	ctx.fillText("-80",20,i_y0+v_height+6);
+
+	ctx.beginPath();
+	ctx.font = "14pt bold" ;
+	ctx.save();
+	ctx.rotate(-90*Math.PI/180);
+	ctx.textAlign = 'center';
+	ctx.fillText("V(mV)",-(i_y0+v_height/2),20);
+	ctx.restore();
+	ctx.textAlign= 'left';
+}
+//***********************************************
+//               初期設定
+//***********************************************
+function initialization(){
+	Camplitude1 = parseFloat($('idCamplitude1').value);	//刺激強度1(mV)
+		localStorage.Camplitude1_data=Camplitude1;
+//	var	dt = 0.0025;				//単位時間（mS）dt=0.0025
+	Cduration1 = parseFloat($('idCduration1').value); //持続時間1(mS)
+		localStorage.Cduration1_data=Cduration1;
+	Rec=parseFloat($('idRec').value);
+		localStorage.Rec_data=Rec;
+	check7 = document.form.Checkbox7.checked;
+		localStorage.check7_data=check7;
+//	check8 = document.form.Checkbox8.checked;
+//		localStorage.check8_data=check8;
+//---------------------------------------------------------
+	temp = parseInt($('idTemperature').value*10); //温度（℃）
+		if(temp <0){temp=0}
+		if(temp>330){temp=330}
+		celsius=temp/10;
+		idTemperature.value=celsius;
+		localStorage.temp_data=temp;
+	phi=Math.pow(3,(celsius-6.3)/10);
+	
+}
+
+//***************************************************
+//          dn,dm,dh1
+//***************************************************
+function get_dn(Vm,n){
+	An=phi*0.01*(10-Vm)/(Math.exp((10-Vm)/10)-1);
+	Bn=phi*0.125*Math.exp(-Vm/80);
+	return An*(1-n)-Bn*n;
+}
+function get_dm(Vm,m){
+	if(Vm==25){
+		Am=phi*1;
+	}else{
+		Am=phi*0.1*(25-Vm)/(Math.exp((25-Vm)/10)-1);
+	}
+	Bm=phi*4*Math.exp(-Vm/18);
+	return Am*(1-m)-Bm*m;
+}
+function get_dh(Vm,h){
+	Ah=phi*0.07*Math.exp(-Vm/20);
+	Bh=phi*1/(Math.exp((30-Vm)/10)+1);
+	return Ah*(1-h)-Bh*h;
+}
+//****************************************************
+//          animation
+//****************************************************
+function animation(){
+	idSimulation.disabled=true;
+	idanime.disabled=true;
+	idcls.disabled=true;
+	ctx.fillStyle="#FFFFFF";
+	ctx.fillRect(c_x0,i_y0,Sim_Width,Vscale*7);//電位２
+	draw_Vaxis();
+	if (check7 == true){
+		draw_Grid();
+	}
+	ctx.fillText(Rec.toFixed(0)+"mm",c_x0+20,i_y0+30);//電極位置テキスト表示
+	iStep=1;
+	Timer1=setInterval(draw_animation,50);
+}	
+function draw_animation(){
+	iStep=iStep+tstep;
+	draw_Vm1();　//上のグラフ
+	//下のグラフ-------------------------------
+	var iStep1;
+	ctx.beginPath();
+	x=c_x0+(iStep-tstep)/(tstop/dt)*Sim_Width;
+	y=(i_y0+v_height-(Vrest+Vm1[Rec*2+1][iStep-tstep]+80)*v_height/160); //-80mV～+80mV =160mv
+	//y=(i_y0+Vscale*3)-(Vrest+Vm1[Rec*2+1][iStep-tstep])*(Vscale/20);
+	ctx.fillStyle="red";
+	ctx.moveTo(x,y);
+	for (iStep1=iStep-tstep;iStep1<iStep+1;iStep1++){
+		x=c_x0+iStep1/(tstop/dt)*Sim_Width;
+		y=i_y0+(80-(Vrest+Vm1[Rec*2+1][iStep1]))*v_height/160;
+		//y=(i_y0+Vscale*3)-(Vrest+Vm1[Rec*2+1][iStep1])*(Vscale/20);
+		ctx.lineTo(x,y);//電位２トレース
+	}
+	ctx.stroke();
+	draw_Axon();//軸索------------------------------
+	if(iStep>tstop/dt){
+		clearInterval(Timer1);
+		document.getElementById('idSimulation').style.backgroundColor = 'rgb(204,255,204)';
+		idSimulation.disabled=false;
+		idanime.disabled=false;
+		idcls.disabled=false;
+	}
+	
+}
+//***************************************************
+//     上のグラフの描画
+//***************************************************
+function draw_Vm1(){
+	// 上のグラフ　縦軸・横軸-------------------------------
+	ctx.fillStyle="#FFFFFF";
+	ctx.fillRect(c_x0,c_y0,Sim_Width,Vscale*7);　//上のグラフ塗りつぶし
+	ctx.fillStyle="black";
+	ctx.strokeStyle="black";
+	ctx.beginPath();
+	ctx.lineWidth=0.3;
+	var c_div=v_height/8;
+	for(i=0;i<9;i++){
+		ctx.moveTo(c_x0,c_y0+c_div*i);
+		if (check7 == true){
+			ctx.lineTo(c_x0+Sim_Width,c_y0+c_div*i); //横軸
+		}
+	}
+	y1=c_y0;
+	y2=c_y0+v_height;
+	for(i=0;i<11;i++){
+		x=c_x0+Sim_Width/10*i;
+		ctx.moveTo(x,y1);
+		if (check7 == true){
+			ctx.lineTo(x,y2); //縦軸
+		}
+	}
+	ctx.stroke();
+	// 上のグラフの波形ーーーーーーーーーーーーーーーーーーーーーーー
+	ctx.beginPath();
+	ctx.strokeStyle = 'rgb(0,0,0)';
+	ctx.fillStyle="red";
+	ctx.lineWidth=2; //2
+	y=(c_y0+v_height-(Vrest+Vm1[1][iStep]+80)*v_height/160); //-80mV～+80mV = 160 mV
+//	y=(c_y0+Vscale*3)-(Vrest+Vm1[2][iStep])*(Vscale/20); //-80mV～+60mV 20mV=Vscale
+	ctx.moveTo(c_x0,y);
+	for(iSeg=2;iSeg<(10/dx+1);iSeg++){
+		x=c_x0+iSeg/(10/dx)*Sim_Width;
+//		y=(c_y0+Vscale*3)-(Vrest+Vm1[iSeg][iStep])*(Vscale/20);
+		y=(c_y0+v_height-(Vrest+Vm1[iSeg][iStep]+80)*v_height/160);
+		ctx.lineTo(x,y);//電位のトレース
+	}
+	ctx.stroke();
+	ctx.beginPath();
+	x=c_x0+Rec/100*Sim_Width;
+	ctx.strokeStyle="blue";
+	ctx.moveTo(x,c_y0);
+	ctx.lineTo(x,c_y0+Vscale*7);
+	ctx.stroke();
+	ctx.strokeStyle="black";
+	ctx.strokeStyle="black";
+	ctx.fillStyle="black";
+	ctx.fillText(((iStep-1)/1000).toFixed(2)+"ms",c_x0+20,c_y0+30);//時間テキスト表示
+}
+//**************************************************
+//     軸索内電位表示
+//**************************************************
+function draw_Axon(){
+	ctx.beginPath();
+	for(iSeg=2;iSeg<10/dx+1;iSeg++){
+		i=(255-(Vm1[iSeg][iStep])/100*255);
+		if(i>255){i=255}
+		if(i<0){i=0}
+		ctx.fillStyle = 'rgb(255,' + Math.floor(i) + ',255)';
+		ctx.strokeStyle='rgb(255,' + Math.floor(i) + ',255)';
+		ctx.strokeRect(c_x0+iSeg/(10/dx+1)*Sim_Width,a_y0,Sim_Width/(10/dx),a_height);
+		ctx.fillRect(c_x0+iSeg/(10/dx+1)*Sim_Width,a_y0,Sim_Width/(10/dx),a_height);
+	}
+	ctx.stroke();
+}
+//  **************************************************
+//  **                                              **
+//  **               シミュレーション実行                    **
+//  **                                              **
+//  **************************************************
+ function disableButtons() {
+    // ボタンを非活性化
+ 	idSimulation.disabled=true;
+	idanime.disabled=true;
+	idcls.disabled=true;
+	//document.getElementById('idSimulation').style.backgroundColor = "red";
+  }
+
+
+
+function simulation_start(){
+	setTimeout(disableButtons(),0);
+	initialization()   //初期設定
+//------------------------------------------------------
+	onchange_check1();
+//------------------------------------------------------
+	J=tstop / dt+1;
+	lend= L + seg0;
+	x=lend / dx+2;
+	D=1/(2*pi*A*R*Cm*dx*dx);
+	aa=dt/(2*pi*A*R*Cm*dx*dx);
+	Istim1=new Array(x);
+	n1=new Array(x);
+	m1=new Array(x);
+	h1=new Array(x);
+	dm1=new Array(x);
+	dn1=new Array(x);
+	dh1=new Array(x);
+	dVm1=new Array(x);
+	Vm1=new Array(x);
+	Im1=new Array(x);
+	Ii1=new Array(x);
+	for(iSeg=1;iSeg<lend/dx+2;iSeg++){
+		Istim1[iSeg]=new Array(J);
+		n1[iSeg]=new Array(J);
+		m1[iSeg]=new Array(J);
+		h1[iSeg]=new Array(J);
+		dm1[iSeg]=new Array(J);
+		dn1[iSeg]=new Array(J);
+		dh1[iSeg]=new Array(J);
+		dVm1[iSeg]=new Array(J);
+		Vm1[iSeg]=new Array(J);
+		Im1[iSeg]=new Array(J);
+		Ii1[iSeg]=new Array(J);
+	}
+	for(iSeg=1;iSeg<lend/dx+2;iSeg++){
+		for(iStep=1;iStep<tstop/dt+2;iStep++){
+			if((iSeg==2) && (iStep>1) && (iStep<(Cduration1/dt+1))){
+				Istim1[iSeg][iStep]=Camplitude1;
+			}else{
+				Istim1[iSeg][iStep]=0;
+			}
+		}
+	}
+//(a)--------------------------------Vkj,nkj,mkj,hkj,j=0,1,2,,J
+	Vm=0.0; Im=0.0;
+	An=phi*0.01*(10.0-Vm)/(Math.exp((10.0-Vm)/10.0)-1.0);
+	Bn=phi*0.125*Math.exp(-Vm/80.0);
+	Am=phi*0.1*(25.0-Vm)/(Math.exp((25.0-Vm)/10.0)-1.0);
+	Bm=phi*4.0*Math.exp(-Vm/18.0);
+	Ah=phi*0.07*Math.exp(-Vm/20.0);
+	Bh=phi*1.0/(Math.exp((30.0-Vm)/10.0)+1.0);
+	n=An/(An+Bn);
+	m=Am/(Am+Bm);
+	h=Ah/(Ah+Bh);
+	iStep=1;
+	for(iSeg=1;iSeg<lend/dx+2;iSeg++){
+		n1[iSeg][iStep]=n;
+		m1[iSeg][iStep]=m;
+		h1[iSeg][iStep]=h;
+		dn1[iSeg][iStep]=0;
+		dm1[iSeg][iStep]=0;
+		dh1[iSeg][iStep]=0;
+		dVm1[iSeg][iStep]=0;
+		Im1[iSeg][iStep]=0;
+		Vm1[iSeg][iStep]=Vm; 
+	} 
+	for(iSeg=1;iSeg<lend/dx+2;iSeg++){
+		for(iStep=1;iStep<tstop/dt+2;iStep++){
+			Vm1[iSeg][iStep]=0;
+		}
+	}
+//-------------------------------------------------------	
+	for(iStep=1;iStep<tstop/dt+1;iStep++){
+		for(iSeg=2;iSeg<lend/dx+1;iSeg++){
+			Im1[iSeg][iStep]=D*(Vm1[iSeg-1][iStep]-2*Vm1[iSeg][iStep]+Vm1[iSeg+1][iStep])+Istim1[iSeg][iStep]/(2*pi*A*dx*2.43);
+			Gk=Gk0*Math.pow(n1[iSeg][iStep],4)*(Vm1[iSeg][iStep]+Vrest-Ek);
+			Gna=Gna0*Math.pow(m1[iSeg][iStep],3)*h1[iSeg][iStep]*(Vm1[iSeg][iStep]+Vrest-Ena);
+			Ii1[iSeg][iStep]=Gk+Gna+Gl0*(Vm1[iSeg][iStep]+Vrest-El);
+			dVm1[iSeg][iStep]=1/Cm*(Im1[iSeg][iStep]-Ii1[iSeg][iStep]);
+			dn1[iSeg][iStep]=get_dn(Vm1[iSeg][iStep],n1[iSeg][iStep]);
+			dm1[iSeg][iStep]=get_dm(Vm1[iSeg][iStep],m1[iSeg][iStep]);
+			dh1[iSeg][iStep]=get_dh(Vm1[iSeg][iStep],h1[iSeg][iStep]);
+			Vm1[iSeg][iStep+1]=Vm1[iSeg][iStep]+dVm1[iSeg][iStep]*dt;
+			n1[iSeg][iStep+1]=n1[iSeg][iStep]+dn1[iSeg][iStep]*dt;
+			m1[iSeg][iStep+1]=m1[iSeg][iStep]+dm1[iSeg][iStep]*dt;
+			h1[iSeg][iStep+1]=h1[iSeg][iStep]+dh1[iSeg][iStep]*dt;
+		}
+		Vm1[1][iStep+1]=Vm1[2][iStep+1];
+		Vm1[lend/dx][iStep+1]=Vm1[lend/dx-1][iStep+1];
+	}
+	draw_Graph()
+	flag_simulated=true;
+
+}
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++
+//          simulation後に下のグラフをCANVASに描画
+//+++++++++++++++++++++++++++++++++++++++++++++++++
+function draw_Graph(){
+	var g1=v_height/80;	
+//--------------------------------------------------------------------
+    //記録電極での膜電位（下）のトレース
+	ctx.beginPath();
+	ctx.strokeStyle="blue";
+	ctx.lineWidth=2;
+	//y=(i_y0+Vscale*3)-(Vrest+Vm1[2][1])*(Vscale/20); //-80mV～+60mV 20mV=Vscale
+	y=(i_y0+v_height-(Vrest+Vm1[2][1]+80)*v_height/160); //-80mV～+80mV =160mv
+	ctx.moveTo(c_x0,y);
+	for(i=2;i<(tstop/dt+2);i++){
+		x=c_x0+i/(tstop/dt)*Sim_Width;
+		//y=(i_y0+Vscale*3)-(Vrest+Vm1[Rec*2+1][i])*(Vscale/20);
+		y=i_y0+(80-(Vrest+Vm1[Rec*2+1][i]))*v_height/160;
+		ctx.lineTo(x,y);//電位2のトレース
+	}
+	ctx.stroke();
+	ctx.fillText(Rec.toFixed(0)+"mm",c_x0+20,i_y0+30);//電極位置テキスト表示
+	iStep=tstop/dt+1;
+	draw_Axon();
+	draw_Vm1();　//上のグラフ
+	idSimulation.disabled=false;
+	idanime.disabled=false;
+	idcls.disabled=false;
+//	animation();
+//	}
+//-------------------------------------------------------------
+
+// check8 の処理　************************************************************************
+// 膜電位のテキスト出力
+//check8=true;
+	if (check8 == true){
+//		document.write("per 0.0025ms"+"<br/>");
+//		document.write("刺激持続時間(ms)".fontcolor("red")+"<br/>");
+//		var string=new String(Cduration1);
+//		document.write("刺激電流(μA)".fontcolor("red")+"<br/>");
+//		var string=new String(Camplitude1);
+//		document.write(string.fontcolor("red")+"<br/>");
+//		for(i=0;i<(tstop/dt+1);i++){  //
+//			document.write(((V[i]).toFixed(3)).slice(-8)+"<br/>");
+//		document.write(Math.round(dt*i*4*10000)/10000+","+Math.round((Vrest+V[i*4])*100)/100+","+Math.round(n1[i*4]*1000)/1000+"<br/>");
+	for(i=1;i<(tstop/dt+2);i=i+10){ //(tstop/dt+2);i++){
+		document.write(dt*(i-1)+","+(Vrest+Vm1[Rec*2+1][i])+"<br/>");
+		}
+	}
+}
+
+//**********************************************************************
+</script>
+<font size="1"><p><pre>   <a href="EC_instruction_guide.pdf" target="_blank">short instruction guide</a></pre></p></font>
+</form>
+<div id="output"></div>
+</head></html>

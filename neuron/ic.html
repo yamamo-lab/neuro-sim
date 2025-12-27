@@ -1,0 +1,1206 @@
+<!-- simulator -->
+<!--
+copyright (c) 2020 Takayuki Yamamoto
+Released under the MIT license.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+<!--	<meta name="viewport" content="initial-scale=1,user-scalable=yes"/> -->
+	<meta name="viewport" content="width=device-width">
+	<title>ion channel</title>
+	<style type="text/css">
+			body{background-color:#D9B4FF;}
+	</style>
+
+</head>
+<body>
+<!--	イオンチャネルのシミュレーション　</br> -->
+	<form name="form" onsubmit="return false">
+ 	<!--
+	持続時間<input type="number" id="idSduration" min="1" max="400" step="1"
+		value="0.2" style="width:50px"> m秒 <br>
+	-->
+	Graph Size V<input type="number" id="idVheight" min="60" max="1000" step="10" value="120" style="width:40px" onchange="draw_axis();">px:
+	I <input type="number" id="idIheight" min="100" max="1000" step="10" value="280" style="width:40px"onchange="draw_axis();">px:
+	T<input type="number" id="idGraphWidth" min="200" max="2000" step="20" value="260" style="width:40px" onchange="draw_axis();"><label for="idGraphWidth">px</label><br>
+Time<input id="Radio2ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="2ms" /><label for="Radio2ms">2ms</label>
+	<input id="Radio4ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="4ms" /><label for="Radio4ms">4ms</label>
+	<input id="Radio8ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" checked="checked" value="8ms" /><label for="Radio8ms" >8ms</label>
+	<input id="Radio16ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="16ms" /><label for="Radio16ms">16ms</label><br>
+	Channel<input id="idNaCh" name="RadioGroupCh" type="radio" onchange="onchange_chtype();" checked="checked" value="NaCh" />Na<sup>+</sup>
+	<input id="idKCh" name="RadioGroupCh" type="radio" onchange="onchange_chtype();" value="KCh">K<sup>+</sup>
+	:<input id="idChSingle" name="RadioGroup2" type="radio"  value="single" checked="checked" onchange="onchange_Radio_Ch();" />1ch
+		<input id="idChMulti" name="RadioGroup2" type="radio" value="2" onchange="onchange_Radio_Ch();"/>
+	<input type="number" id="idChNum" min="10" max="10000" value="60" style="width:55px"  onchange="onchange_ChNum();">ch<br>
+	<input id="idNoise" type="checkbox"  onchange="onchange_noise();">noise
+	<input type="checkbox" id="idTextOut" onclick="onclick_textout();" >text out
+	<input type="checkbox" name="Grid1" id="idGrid" value="on" onclick="onchange_Grid();" >grid:
+	Iscale<select id="idIScale" onchange="change_IScale();" size="1" style="width:62px">
+			<option value="0.5">0.5pA</option>
+			<option value="1">  1pA</option>
+			<option value="2">  2pA</option>
+			<option value="5">  5pA</option>
+			<option value="10">10pA</option>
+			<option value="20">20pA</option>
+			<option value="50">50pA</option>
+			<option value="100">100pA</option>
+			<option value="200">200pA</option>
+			<option value="500">500pA</option>
+			<option value="1000">1nA</option>
+			<option value="2000">2nA</option>
+			<option value="5000">5nA</option>
+			<option value="10000">10nA</option>
+		</select>/div<br>
+cmd. pulse<input type="number" id="idVstim" min="-100" max="100" step="5" value="0" style="width:40px" onchange="onchange_Vstim();"> mV
+	: temp<input type="number" id="idTemperature" min="0" max="40" step=".1" style="width:40px" value="6.3" onchange="onchange_Temperature();">&#x2103; 
+	<input type="button" id="idExec" value="simulate" onClick="simulation_start()"><br>
+	<canvas id="a_canvas" width="360" height="610"></canvas>
+<!-- **************************************** -->
+<script>
+	window.addEventListener('load',function(){
+		load();
+		draw_axis();
+	});
+	var Vrest=-60;
+	var Sim_Width=260;
+	var c_x0=50;
+	var c_width = c_x0+Sim_Width+50;
+	var Sim_Height=520;
+	var c_y0=10;
+	var c_y1=120;
+	var c_y2=c_y0+c_y1-Vrest*(c_y1/80);
+    var c_height = c_y0+ Sim_Height+70;
+	var v_x0=c_x0;
+	var v_height=120;
+	var v_y0=10;      //
+	var i_x0=c_x0;    //電流軸
+	var i_y0=v_y0+v_height+20;//電流軸
+	var i_height=280;
+	var i_y1=i_y0+i_height/2;//電流軸  y=0
+	var t_x0=c_x0;
+	var t_y0=i_y0+i_height;
+	var temp_data;
+	var Vstim_data;
+	var width_data;
+	var ChNum;
+	var flag_draw_Gaxis=false;
+	var flag_draw_trace=false;
+	var flag_simulated=false;
+	var tstop=16;
+	var check1_data;
+	var check2_data;
+	var check3_data;
+	var check7_data,check8_data;
+	var data_2ms,data_4ms,data_8ms,data_16ms;
+	var IScale;
+	var Radio_Ch_Single;
+	var Radio_Ch_Multi;
+	var IScale;
+	var Radio_Nach, Radio_Kch;
+	var chsinglenum;
+//------------------------------
+//	var i,j,t;
+	var dt = 0.0025;				//単位時間（mS）dt=0.0025
+//	var samplitude = parseFloat($('idVstim').value);	//刺激強度(mV)
+//		localStorage.Vstim_data=samplitude;
+//		IScale=idIScale.value;
+//		localStorage.IScale_data=IScale;
+//	var sduration = parseFloat($('idSduration').value);	//持続時間(mS)
+	var sduration = 16;
+	var Gna0bairitu = 1; //Gna0の倍率-----------------
+	var Gk0bairitu = 1; //Gk0の倍率-------------------
+	var Grid;
+	var Cm = 1.0;					//膜容量(F)
+	var Vrest = -60.0;			//静止電位(mV)
+	var Ek=-12.0+Vrest,Ena=115.0+Vrest,El=10.6+Vrest;
+	var Gl0=0.3;//最大コンダクタンス(mS/cm2)　Gk0=36.0,Gna0=120.0
+	var Gk0=36.0*Gk0bairitu;//------------------------
+	var Gna0=120.0*Gna0bairitu;//----------------------
+	var Gk,Gna,Gl;
+	var temp,celsius,phi;
+	var phi=Math.pow(3,(celsius-6.3)/10);
+	var Vm,newVm;
+	var Ik,Ina,Il;
+	var Im,Ichannel,Istim;
+	var Am,Bm,An,Bn,Ah,Bh;
+	var m,n,h;
+	var V =	new Array();
+	var S =	new Array();
+	var Gmna =	new Array();
+	var Gmk	 =	new Array();
+	var I_k	= new Array();
+	var I_na =	new Array();
+	var I_m	= new Array();
+	var x1,y1,x2,y2,Vm_y1,Vm_y2,Gna_y1,Gk_y1;
+	var t_x0,t_y0,i_x0,i_y0,i_y1;
+	var An1 = new Array();
+	var Bn1 = new Array();
+	var Random0 = 0;
+	var Random1 = 0;
+	var Kchan = new Array();
+	var Kchan1 = new Array(tstop/dt+1);
+	var Kchan2 = new Array(tstop/dt+1);
+	var Kchan_T=0;
+	var Kchan_dt=0;
+	var Kchan_phase=1;
+	var chan_num=6;    //-----------------------------
+	var n1;
+	var Am1 = new Array();
+	var Bm1 = new Array();
+	var Ah1 = new Array();
+	var Bh1 = new Array();
+	var Nachan = new Array(tstop/dt+1);
+	var Nachan1 = new Array();
+	var Nachan2 = new Array(tstop/dt+1);
+	var Nachan_T=0;
+	var Nachan_dt=0
+	var Nachan_phase=0;
+	var zeta;
+	var noise=0,noise_level=0;
+	var prestim = new Array();
+	var Ichan = new Array();
+	var Ichan_sum = new Array();
+ 	var prestim_sum = new Array();
+	var chtype;
+	var Ichan1 = [];
+	var prestim1 = [];
+	var temp1; //シミュレーション時
+
+//canvas要素を取得
+//	var canvas = document.getElementById("a_canvas");
+	function $(id){ return document.getElementById(id);}
+	var canvas = $('a_canvas'); //  
+	var ctx = canvas.getContext('2d');	//描画用のコンテキストを取得
+//
+
+//***********************************************
+//               読み込み
+//***********************************************
+function load(){
+// 温度データ読み込み　--------------------------------------
+	var n=localStorage.temp_data;
+	if(isNaN(n)){
+		var temp=Math.round(Math.random()*(150-50+1)+50);
+	}else{
+		temp=Number(n);
+	}
+	idTemperature.value=temp/10
+	onchange_Temperature();
+// グラフ幅読み込み　--------------------------------------------
+	n=localStorage.width_data;
+	if(isNaN(n)){
+		var width=260;
+	}else{
+		var width=Number(n);
+	}
+	idGraphWidth.value=width;
+	localStorage.width_data=width;
+// 電位軸高さ読み込み　-------------------------------------------
+	n=localStorage.idVheight;
+	if(isNaN(n)){
+		var v_height=200;
+	}else{
+		var v_height=Number(n);
+	}
+	idVheight.value=v_height;
+	localStorage.idVheight=v_height;
+// 電流軸高さ読み込み　-------------------------------------------
+	n=localStorage.idIheight;
+	if(isNaN(n)){
+		var i_height=280;
+	}else{
+		var i_height=Number(n);
+	}
+	idIheight.value=i_height;
+	localStorage.idIheight=i_height;
+// 刺激電圧読み込み　--------------------------------------------
+	n=localStorage.Vstim_data;
+	if(isNaN(n)){
+		var stim=0;
+	}else{
+		var stim=Number(n);
+	}
+	idVstim.value=stim;
+	localStorage.Vstim_data=stim;
+	n=localStorage.samplitude;
+//console.log(n);
+	if(isNaN(n)){
+		samplitude=-60;
+	}else{
+		samplitude=Number(n);
+	}
+	idVstim.value=samplitude;
+//	samplitude = parseFloat($('idVstim').value);	//刺激強度(mV)
+	localStorage.samplitude=samplitude;
+
+//チャネルタイプの読み込み---------------------------
+	n=localStorage.Radio_NaCh;
+	if(n=="true"){
+		idNaCh.checked=true;
+		idKCh.checked=false;
+	}
+	n=localStorage.Radio_KCh;
+	if(n=="true"){
+		idNaCh.checked=false;
+		idKCh.checked=true;
+	}
+	onchange_chtype();
+// チャネルチェックの読み込み------------------------
+	n=localStorage.Radio_Ch_Single;
+	if(n=="true"){
+		idChSingle.checked=true;
+		idChMulti.checked=false;
+	}
+	n=localStorage.Radio_Ch_Multi;
+	if(n=="true"){
+		idChSingle.checked=false;
+		idChMulti.checked=true;
+	}
+	onchange_Radio_Ch();
+// チャネル数の読み込み　----------------------------
+	n=localStorage.ChNum;
+	if(isNaN(n)){
+		ChNum=60;
+	}else{
+		ChNum=Number(n);
+	}
+	idChNum.value=ChNum;
+	localStorage.ChNum=ChNum;
+// 電流軸の読み込み　-------------------------------
+	n=localStorage.IScale;
+	if(isNaN(n)){
+		IScale=0.5;
+	}else{
+		IScale=Number(n);
+	}
+	idIScale.value=IScale;
+	localStorage.IScale=IScale;
+// ノイズ読み込み ---------------------------------
+	n=localStorage.idNoise;
+	if(n=="false"){idNoise.checked=false}
+	if(n=="true"){idNoise.checked=true}
+// チェックの読み込み ------------------------------
+	var c=localStorage.check7_data;
+	if(c =="false"){$('idGrid').checked=false}
+	if(c == "true"){$('idGrid').checked=true}
+// 時間軸読み取り-----------------------------
+	var c2=localStorage.data_2ms;
+	if(c2 =="true"){$('Radio2ms').checked=true}
+	var c4=localStorage.data_4ms;
+	if(c4 =="true"){$('Radio4ms').checked=true}
+	var c8=localStorage.data_8ms;
+	if(c8 =="true"){$('Radio8ms').checked=true}
+	var c16=localStorage.data_16ms;
+	if(c16 =="true"){$('Radio16ms').checked=true}
+	onRadioButtonChange();
+}
+//********************************************
+//          温度変更
+//********************************************
+function onchange_Temperature(){
+	temp=idTemperature.value*10;
+	if(temp <0){temp=0}
+	if(temp>400){temp=400}
+	celsius=temp/10;
+	idTemperature.value=celsius;
+	localStorage.temp_data=temp;
+	temp=localStorage.temp_data;
+	phi=Math.pow(3,(celsius-6.3)/10);
+}
+//*********************************************
+//          刺激電圧変更
+//*********************************************
+function onchange_Vstim(){
+	samplitude=idVstim.value;
+	localStorage.samplitude=samplitude;
+}
+//**********************************************
+//           Grid変更
+//**********************************************
+function onchange_Grid(){
+	change_IScale();
+}
+//**********************************************
+//               電流軸変更
+//**********************************************
+function change_IScale(){
+	IScale=idIScale.value;
+	localStorage.IScale=IScale;
+	draw_axis();
+	if(flag_simulated){
+			draw_trace();
+		if(idChSingle.checked){
+			for(n3=1;n3<14;n3++){
+				prestim_sum.fill(0);
+				Ichan_sum.fill(0);
+				for(n4=0;n4<(tstop/8/dt);n4++){
+					prestim_sum[n4]=prestim1[n3][n4]+IScale*(n3-7);
+				}
+				for(n4=0;n4<tstop/dt;n4++){
+					Ichan_sum[n4]=Ichan1[n3][n4]+IScale*(n3-7);
+				}
+				Ich_trace();
+			}
+		}else{
+			Ich_trace();
+		}
+	}
+}
+//***********************************************
+//               時間軸変更
+//***********************************************
+function onRadioButtonChange(){
+// 時間読み込み -----------------------
+	var radiobtn2ms = $("Radio2ms");
+	var radiobtn4ms = $("Radio4ms");
+    var radiobtn8ms = $("Radio8ms");
+    var radiobtn16ms = $("Radio16ms");
+	data_2ms=radiobtn2ms.checked;
+	data_4ms=radiobtn4ms.checked;
+	data_8ms=radiobtn8ms.checked;
+	data_16ms=radiobtn16ms.checked;
+	if (radiobtn2ms.checked){tstop=2}
+	if (radiobtn4ms.checked){tstop=4}
+	if (radiobtn8ms.checked){tstop=8}
+	if (radiobtn16ms.checked){tstop=16}
+	localStorage.data_2ms=data_2ms;
+	localStorage.data_4ms=data_4ms;
+	localStorage.data_8ms=data_8ms;
+	localStorage.data_16ms=data_16ms;
+	
+	draw_axis();
+}
+//*******************************************
+//        text out
+//*******************************************
+function onclick_textout(){
+	if(flag_simulated){
+	document.write("command potential(mV)".fontcolor("red")+"<br>");
+	var string=new String(samplitude);
+	document.write(string.fontcolor("red")+"<br/>");
+	document.write("temperature(℃)"+"<br/>");
+	string=new String(temp1);
+	document.write(string+"<br/>");
+	document.write("dt=0.0025ms"+"<br/>");
+	document.write("Iion(pA)"+"<br>")
+	t=0;
+	for(i=0;i<(tstop/dt);i++){  //
+	
+		document.write(((Ichan_sum[i]).toFixed(3)).slice(-8)+"<br/>");
+		t=t+dt;
+	}
+	document.close();
+	}
+	idTextOut.checked=false;
+}
+//********************************************
+//      	チャネルタイプ変更
+//********************************************
+function onchange_chtype(){
+	Radio_NaCh=idNaCh.checked;
+	Radio_KCh=idKCh.checked;
+	localStorage.Radio_NaCh=Radio_NaCh;
+	localStorage.Radio_KCh=Radio_KCh;
+	flag_simulated=false;
+	draw_cls();
+}
+//*********************************************
+//        ラジオボタン（チャネル）変更
+//*********************************************
+//Single/Multi読み込み--------------------------
+function onchange_Radio_Ch(){
+	Radio_Ch_Single=idChSingle.checked;
+	Radio_Ch_Multi=idChMulti.checked;
+	localStorage.Radio_Ch_Single=Radio_Ch_Single;
+	localStorage.Radio_Ch_Multi=Radio_Ch_Multi;
+	if (idChSingle.checked){
+		idChNum.disabled=true;
+		idTextOut.disabled=true;
+	}else{
+		idChNum.disabled=false;
+		idTextOut.disabled=false;
+	}
+	flag_simulated=false;
+	draw_cls();
+}
+//***********************************************
+//         チャネル数変更
+//***********************************************
+function onchange_ChNum(){
+	ChNum=idChNum.value;
+	localStorage.ChNum=ChNum;
+}
+//**********************************************
+//        ノイズ変更
+//**********************************************
+function onchange_noise(){
+		localStorage.idNoise=idNoise.checked;
+}
+//***********************************************
+//               画面クリア
+//************************************************
+function draw_cls(){
+	flag_draw_Gaxis=false;
+	draw_axis();
+}
+//***********************************************
+//               軸描画
+//***********************************************
+function draw_axis(){
+// グラフ幅読み込み -------------------------
+	Sim_Width = parseFloat($('idGraphWidth').value);//グラフ幅(px)
+	if(Sim_Width>2000){Sim_Width=2000;}
+	if(Sim_Width<200){Sim_Width=200}
+	c_width = c_x0+Sim_Width+50;
+	canvas.setAttribute('width',c_width);
+	idGraphWidth.value=Sim_Width;
+	localStorage.width_data=Sim_Width;
+// 電位軸高さ読み込み ------------------------
+	v_height=parseFloat(idVheight.value);
+	if(v_height<60){v_height=60;}
+	if(v_height>260){v_height=260;}
+	idVheight.value=v_height;
+	localStorage.idVheight=v_height;
+// 電流軸高さ読み込み　-----------------------
+	i_height=parseFloat(idIheight.value);
+	if(i_height<100){i_height=100;}
+	if(i_height>400){i_height=400;}
+	idIheight.value=i_height;
+	localStorage.idIheight=i_height;
+	i_y0=v_y0+v_height+10;//電流軸
+	i_y1=i_y0+i_height/2;//電流軸  y=0
+	t_x0=c_x0;
+	t_y0=i_y0+i_height;
+// 時間読み込み -----------------------
+	var radiobtn2ms = $("Radio2ms");
+	var radiobtn4ms = $("Radio4ms");
+    	var radiobtn8ms = $("Radio8ms");
+    	var radiobtn16ms = $("Radio16ms");
+	data_2ms=radiobtn2ms.checked;
+	data_4ms=radiobtn4ms.checked;
+	data_8ms=radiobtn8ms.checked;
+	data_16ms=radiobtn16ms.checked;
+	if (radiobtn2ms.checked){tstop=2}
+	if (radiobtn4ms.checked){tstop=4}
+	if (radiobtn8ms.checked){tstop=8}
+	if (radiobtn16ms.checked){tstop=16}
+	localStorage.data_2ms=data_2ms;
+	localStorage.data_4ms=data_4ms;
+	localStorage.data_8ms=data_8ms;
+	localStorage.data_16ms=data_16ms;
+// 四角-------------------------------
+	ctx.fillStyle="#FFFFFF";
+	ctx.fillRect(v_x0,v_y0,Sim_Width,v_height);
+	ctx.fillRect(v_x0,i_y0,Sim_Width,i_height);
+	ctx.fillStyle="black";
+
+//電位軸-----------------------
+	ctx.beginPath();
+	ctx.moveTo(v_x0,v_y0);//Y軸 +80mV
+	ctx.lineTo(v_x0,v_y0+v_height);//Y軸　～-80mV
+	for(i=0;i<9;i++){
+		ctx.moveTo(v_x0,v_y0+v_height/8*i);
+		ctx.lineTo(v_x0+5,v_y0+v_height/8*i);
+	}
+	ctx.stroke();
+	ctx.font="11pt bold";
+	ctx.textAlign="end";
+	ctx.fillText("80",45,v_y0+6);
+	ctx.fillText("40",45,v_y0+v_height/8*2+6);
+	ctx.fillText(" 0",45,v_y0+v_height/8*4+6);
+	ctx.fillText("-40",45,v_y0+v_height/8*6+6);
+	ctx.fillText("-80",45,v_y0+v_height/8*8+6);
+	ctx.textAlign="center";
+	ctx.beginPath();
+	ctx.font = "13pt bold" ;
+	ctx.save();
+	ctx.rotate(-90*Math.PI/180);
+	ctx.fillText("V(mV)",-(v_y0+v_height/2),15);
+	ctx.restore();
+
+
+//-----------------------------------------------
+//電流軸
+	ctx.beginPath();
+	if(idChMulti.checked){
+	ctx.moveTo(i_x0,i_y0);//Y軸 +1.0 mA/sq cm
+	ctx.lineTo(i_x0,i_y0+i_height);//Y軸　-1.0 mA/sq cm
+	for(i=0;i<15;i++){
+		ctx.moveTo(i_x0,i_y0+i_height/14*i);
+		ctx.lineTo(i_x0+5,i_y0+i_height/14*i);
+	}
+	ctx.stroke();
+	ctx.font="11pt bold";
+	ctx.textAlign="end";
+	var IScale1=IScale/1000;
+	for(i=0;i<7;i++){
+		n=(-6+i*2)*IScale1;
+		if(IScale<50){
+			ctx.fillText(-(-6+i*2)*IScale,45,i_y0+i_height/14+i_height/7*i+6);
+		}else{
+			ctx.fillText(-n.toFixed(1),45,i_y0+i_height/14+i_height/7*i+6);
+		}
+	}
+	ctx.textAlign="center";
+	ctx.beginPath();
+	ctx.font = "13pt bold" ;
+	ctx.save();
+	ctx.rotate(-90*Math.PI/180);
+	if(IScale<50){
+		ctx.fillText("I(pA)",-(i_y0+i_height/2),15);
+	}else{
+				ctx.fillText("I(nA)",-(i_y0+i_height/2),15);
+	}
+	ctx.restore();
+	}
+//-----------------------------------------
+	if(idChSingle.checked){
+		for(i=0;i<2;i++){
+			ctx.moveTo(i_x0-1,i_y0+i_height/14*(i+6));
+			ctx.lineTo(i_x0+5,i_y0+i_height/14*(i+6));
+		}
+		var i_y3=i_y0+i_height/14*7;
+		var i_y4=i_y0+i_height/14*6;
+		ctx.moveTo(i_x0-1,i_y3);
+		ctx.lineTo(i_x0-1,i_y4);
+		ctx.moveTo(i_x0-2,i_y3);
+		ctx.lineTo(i_x0-2,i_y4);
+		ctx.stroke();
+		ctx.textAlign="end";
+		ctx.textBaseline="middle";
+		ctx.beginPath();
+		ctx.font="12pt bold";
+		if(IScale<50){
+			ctx.fillText(IScale+"pA",i_x0-4,(i_y3+i_y4)/2);
+		}else{
+			ctx.fillText(IScale/1000+"nA",i_x0-4,(i_y3+i_y4)/2);
+	}
+	}
+//-----------------------------------------------
+// 時間軸
+	ctx.moveTo(c_x0+Sim_Width/9,t_y0);
+	ctx.lineTo(c_x0+Sim_Width,t_y0);			//時間軸
+	for(i=1;i<10;i++){
+		ctx.moveTo(c_x0+Sim_Width/9*i,t_y0);	//時間軸目盛
+		ctx.lineTo(c_x0+Sim_Width/9*i,t_y0-5);
+	}
+	ctx.stroke();
+	ctx.font = "11pt bold" ;				//時間軸ラベル
+	ctx.fillText("0",c_x0+Sim_Width/9-4,t_y0+20); //時間軸ラベル
+	ctx.fillText(tstop/2,c_x0+Sim_Width*5/9-4,t_y0+20);	//時間軸ラベル
+	ctx.fillText(tstop,c_x0+Sim_Width-4,t_y0+20); //時間軸ラベル
+	ctx.textAlign="center";
+	ctx.font = "13pt bold";
+	ctx.fillText("Time(ms)",c_x0+Sim_Width/9*5,t_y0+36);
+// Grid-----------------------------------------
+	if(idGrid.checked){
+		ctx.beginPath();
+		ctx.lineWidth=0.3;
+		for(i=0;i<15;i++){
+			ctx.moveTo(c_x0,i_y0+i_height/14+i_height/14*(i-1));
+			ctx.lineTo(c_x0+Sim_Width,i_y0+i_height/14+i_height/14*(i-1));
+		}
+		ctx.stroke();
+	// 時間軸
+		for(i=0;i<10;i++){
+			ctx.moveTo(c_x0+Sim_Width/9*i,i_y0);//時間軸目盛
+			ctx.lineTo(c_x0+Sim_Width/9*i,i_y0+i_height);
+		}
+		ctx.stroke();
+	}
+}
+//***********************************************
+//             FFT
+//**********************************************
+function fft(){
+
+	var N=Math.pow(2,Math.ceil(Math.log2(tstop/dt)));
+	var M=Math.log(N)/Math.log(2);
+	var XR = new Array(N);
+	var XI =new Array(N);
+	var S =new Array(N/2);
+	var C =new Array(N/2);
+	var I;
+//----------------------------------
+	for(I=0;I<N;I++){
+		var di=0;
+		if(I<=(tstop/8/dt)){
+			XR[I]=prestim[I];
+		}else{
+			if(I<(tstop/dt+tstop/8/dt)){
+				XR[I]=Ichan[I-tstop/8/dt];
+			}else{
+				if(I<tstop/dt+tstop/8/dt+50){
+					XR[I]=Ichan[tstop/dt-1]*(50-di)/50;
+					di=di+1;
+				}else{
+					XR[I]=0;
+				}
+			}
+		}
+	}
+	for(I=0;I<N;I++){XI[I]=0;}
+//----------------------------------
+	var A=0,B=Math.PI*2/N;
+	for(i=0;i<=N/2;i++){
+		S[i]=Math.sin(A);
+		C[i]=Math.cos(A);
+		A=A+B;
+	}
+//----------------------------------
+	fft_sub();
+var	LPF=80; //kHz
+	A=Math.ceil(LPF/(1/dt/2/(N/2)));
+	//A=200*N/1024;
+	B=1;
+	I=0.01;
+	for(i=A+1;i<(N/2);i++){
+		XR[i]=XR[i]*Math.pow(I,B/A);
+		XI[i]=XR[i]*Math.pow(I,B/A);
+		B=B+1;
+	}
+	B=1;
+	for(i=N-1-A;i>=(N/2);i--){
+		XR[i]=XR[i]*Math.pow(I,B/A);
+		XI[i]=XI[i]*Math.pow(I,B/A);
+		B=B+1;
+	}
+		
+	fft_sub();
+	for(i=N-1;i>=0;i--){
+		XI[N-1-i]=XR[i];
+	}
+	for(i=0;i<(tstop/dt);i++){
+		Ichan[i]=XI[i+tstop/8/dt]/N;
+	}
+	for(i=0;i<tstop/8/dt;i++){prestim[i]=XI[i]/N;}
+//++++++++++++++++++++++++++++++++++++++++++++++
+function fft_sub(){
+	var L=N, H=1, G, K, Q, J;
+	for(G=1;G<=M;G++){ L=L/2, K=0;
+	  for(Q=1;Q<=H;Q++){ P=0;
+		for(I=K;I<(L+K);I++){
+			J=I+L;
+			A=XR[I]-XR[J];
+			B=XI[I]-XI[J];
+			XR[I]=XR[I]+XR[J];
+			XI[I]=XI[I]+XI[J];
+			if(P==0){
+				XR[J]=A, XI[J]=B;
+			}else{
+				XR[J]=A*C[P]+B*S[P];
+				XI[J]=B*C[P]-A*S[P];
+			}
+			P=P+H;
+		}
+	  	K=K+L+L;
+	  }
+	  H=H+H;
+	}
+//-----------------------------------
+	var temp;
+	J=N/2;
+	for(I=1;I<N;I++){K=N;
+		if(J<I){
+			temp=XR[I],XR[I]=XR[J],XR[J]=temp;
+			temp=XI[I],XI[I]=XI[J],XI[J]=temp;
+		}
+		K=K/2;
+		while(J>=K){
+			J=J-K;
+			K=K/2;
+		}
+		J=J+K;
+	}
+}
+//console.log(n,m);
+}
+//***********************************************
+//         シミュレーション実行
+//***********************************************
+function simulation_start(){
+	temp1=parseFloat(idTemperature.value);
+	var T=273.15+temp1;
+	var F=96.485 // C/mol
+	var R=8.3144  // J/K･mol
+	var Nai=50,Nao=440,Ki=400,Ko=20,Cli=60,Clo=550;
+	var PK=1,PNa=0.04,PCl=0.045;
+	var A=PK*Ko+PNa*Nao+PCl*Cli;
+	var B=PK*Ki+PNa*Nai+PCl*Clo;
+	Vrest=(R*T)/F*(Math.log(A)-Math.log(B));
+	Ek=(R*T)/F*(Math.log(Ko)-Math.log(Ki));
+	Ena=(R*T)/F*(Math.log(Nao)-Math.log(Nai));
+	phi=Math.pow(3,(celsius-6.3)/10);
+
+	IScale=idIScale.value;
+	Ichan_sum = Array(tstop/dt);
+	prestim_sum = Array(tstop/8/dt);
+	draw_cls();
+	Kchan2.fill(0);
+	Ichan_sum.fill(0);
+	prestim_sum.fill(0);
+	HH();
+	draw_trace(); //------------------whole cell 電流表示
+//-----------------------------------------
+	if(idNoise.checked){noise_level=0.3;}else{noise_level=0;}
+//-----------------------------------------
+	if(idChSingle.checked){
+		for(n3=1;n3<14;n3++){
+			prestim_sum.fill(0);
+			Ichan_sum.fill(0);
+			channel_simulation0();
+			prestim1[n3]=[];
+			Ichan1[n3]=[];
+			for(n4=0;n4<(tstop/8/dt);n4++){
+				prestim1[n3][n4]=prestim_sum[n4];
+				prestim_sum[n4]=prestim_sum[n4]+IScale*(n3-7);
+			}
+			for(n4=0;n4<tstop/dt;n4++){
+				Ichan1[n3][n4]=Ichan_sum[n4];
+				Ichan_sum[n4]=Ichan_sum[n4]+IScale*(n3-7);
+			}
+			Ich_trace();
+		}
+	}else{
+	for(n1=0;n1<=(ChNum);n1++){    //ChNum+1←ChNum
+console.log(n1);
+		channel_simulation0();
+	}
+	Ich_trace();
+	}
+flag_simulated=true;
+} // simulation_start
+//**********************************************************
+function channel_simulation0(){
+		for(n2=0;n2<=(2/dt);n2++){
+			noise=((Math.random()+Math.random()+Math.random()+Math.random()+Math.random())/5-0.5)*noise_level;
+			prestim[n2]=noise;
+		}
+		channel_simulation();
+		if(idNoise.checked){
+			fft();                
+		}
+		for(n2=0;n2<(tstop/8/dt);n2++){
+			prestim_sum[n2]=prestim_sum[n2]+prestim[n2];
+		}
+		for(n2=0;n2<tstop/dt;n2++){
+			Ichan_sum[n2]=Ichan_sum[n2]+Ichan[n2];
+		}
+	
+}
+//---------------------------------------------------------
+function channel_simulation(){
+	Ichan[0]=0;
+//	Vm=0;
+	An=phi*0.01*(10.0-Vm)/(Math.exp((10.0-Vm)/10.0)-1.0);
+	Bn=phi*0.125*Math.exp(-Vm/80.0);
+	Am=phi*0.1*(25.0-Vm)/(Math.exp((25.0-Vm)/10.0)-1.0);
+	Bm=phi*4.0*Math.exp(-Vm/18.0);
+	Ah=phi*0.07*Math.exp(-Vm/20.0);
+	Bh=phi*1.0/(Math.exp((30.0-Vm)/10.0)+1.0);
+	
+	An1[0]=An;
+	Bn1[0]=Bn;
+	Kchan[0]=0;
+	Kchan1[0]=0;
+	Kchan2[0]=0;
+	Nachan[0]=0;
+	Nachan_T=0;
+	Random0=Math.random();
+	Random1=Math.log(Math.random());
+	Kchan_T=1/(4*An+Bn)*Random1/(-An*4);
+	Kchan_phase=1;
+	var zeta=3*Am+Bh;
+	if(3*Am/(zeta) > Random0){
+		Nachan_phase=2;
+		Nachan_dt=Random1/(-Am*3/1);
+	}
+	else{
+		Nachan_phase=1;
+		Nachan_dt=Random1/(-Bh/1);
+	}
+	Nachan_T=Nachan_dt;
+//	Nachan[0]=Nachan_phase;
+	Nachan1[0]=0;
+	Nachan2[0]=0;
+
+	t=0.0;
+	Vm=samplitude-Vrest;
+		if(Vm==10.0){
+			An=phi*0.1;
+		}
+		else{
+			An=phi*0.01*(10.0-Vm)/(Math.exp((10.0-Vm)/10.0)-1.0);
+		}
+		Bn=phi*0.125*Math.exp(-Vm/80.0);
+		if(Vm==25.0){
+			Am=phi*1.0;
+		}
+		else{
+			Am=phi*0.1*(25.0-Vm)/(Math.exp((25.0-Vm)/10.0)-1.0);
+		}
+		Bm=phi*4.0*Math.exp(-Vm/18.0);
+		Ah=phi*0.07*Math.exp(-Vm/20.0);
+		Bh=phi*1.0/(Math.exp((30.0-Vm)/10.0)+1.0);
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	if(idNaCh.checked==true){
+// Sodium channel ------------------------------------
+	for (i=1;i<tstop/dt+1;i++){
+		Nachan[i]=Nachan[i-1];
+		if (Nachan_T < t){
+//console.log("Nachan_T="+Nachan_T+","+Nachan_phase)
+			Nachan[i]=Nachan_phase;
+			Random0=Math.random();
+			Random1=Math.log(Math.random());
+			switch(Nachan[i]){
+				case 0:
+					zeta=3*Am+Bh;
+					if(3*Am/zeta > Random0){
+						Nachan_phase=2;
+						Nachan_dt=Random1/(-Am*3/1);
+					}else{
+						Nachan_phase=1;
+						Nachan_dt=Random1/(-Bh/1)
+					}
+					break;
+				case 1:
+					zeta=3*Am+Ah;
+					if(3*Am/(zeta) > Random0) {
+						Nachan_phase=3;
+						Nachan_dt=Random1/(-Am*3/1);
+					}else{
+						Nachan_phase=0;
+						Nachan_dt=Random1/(-Ah/1);
+					}
+					break;
+				case 2:
+					zeta=2*Am+Bh+Bm;
+					if(2*Am/(zeta)>Random0){
+						Nachan_phase=4;
+						Nachan_dt=Random1/(-2*Am/1);
+					}else{
+						if((2*Am+Bh)/(zeta)>Random0){
+							Nachan_phase=3;
+							Nachan_dt=Random1/(-Bh/1);
+						}else{
+							Nachan_phase=0;
+							Nachan_dt=Random1/(-Bm/1);
+						}
+					}
+					break;
+				case 3:
+					zeta=2*Am+Ah+Bm;
+					if(2*Am/(zeta)>Random0){
+						Nachan_phase=5;
+						Nachan_dt=Random1/(-2*Am/1);
+					}else{
+						if((2*Am+Ah)/(zeta)>Random0){
+							Nachan_phase=2;
+							Nachan_dt=Random1/(-Ah/1);
+						}else{
+							Nachan_phase=1;
+							Nachan_dt=Random1/(-Bm/1);
+						}
+					}
+					break;
+				case 4:
+					zeta=Am+Bh+2*Bm;
+					if(Am/(zeta)>Random0){
+						Nachan_phase=6;
+						Nachan_dt=Random1/(-Am/1);
+					}else{
+						if((Am+Bh)/(zeta)>Random0){
+							Nachan_phase=5;
+							Nachan_dt=Random1/(-Bh/1);
+						}else{
+							Nachan_phase=2;
+							Nachan_dt=Random1/(-2*Bm/1);
+						}
+					}
+					break;
+				case 5:
+					zeta=Am+Ah+2*Bm;
+					if(2*Bm/(zeta)>Random0){
+						Nachan_phase=3;
+						Nachan_dt=Random1/(-2*Bm/1);
+					}else{
+						if((2*Bm+Ah)/(zeta)>Random0){
+							Nachan_phase=4;
+							Nachan_dt=Random1/(-Ah/1);
+						}else{
+							Nachan_phase=7;
+							Nachan_dt=Random1/(-Am/1);
+						}
+					}
+					break;
+				case 6:
+					zeta=Bh+3*Bm;
+					if(Bh/(zeta) > Random0){
+						Nachan_phase=7;
+						Nachan_dt=Random1/(-Bh/1);
+					}else{
+						Nachan_phase=4;
+						Nachan_dt=Random1/(-3*Bm/1);
+					}
+					break;
+				case 7:
+					zeta=Ah+3*Bm;
+					if(Ah/(zeta) > Random0){
+						Nachan_phase=6;
+						Nachan_dt=Random1/(-Ah/1);
+					}else{
+						Nachan_phase=5;
+						Nachan_dt=Random1/(-3*Bm/1);
+					}
+					break;
+			}
+			Nachan_T=Nachan_T+Nachan_dt;
+		}
+		noise=((Math.random()+Math.random()+Math.random()+Math.random()+Math.random())/5-0.5)*noise_level;
+		if(Nachan[i]==6){
+			Nachan1[i]=20*(samplitude-Ena)/1000+noise;
+			Ichan[i]=20*(samplitude-Ena)/1000+noise;
+		}else{
+			Nachan1[i]=0+noise;
+			Ichan[i]=0+noise;
+		} //*?
+		Kchan2[i]=Kchan2[i]+Nachan1[i];
+		t=t+dt;
+	}
+	}else{
+// Potassium ------------------------------------------ 
+	for (i=1;i<tstop/dt+1;i++){
+		if (Kchan_T < t){
+		Kchan[i]=Kchan_phase;
+		switch(Kchan[i]){
+			case 0:
+				Kchan_phase=1;
+				Kchan_T=Kchan_T+Math.log(Math.random())/(-An*4);
+				break;
+			case 1:
+				if(An*3/(An*3+Bn) > Math.random()){
+					Kchan_phase=2;
+					Kchan_T=Kchan_T+Math.log(Math.random())/(-An*3);
+				}
+				else{
+					Kchan_phase=0;
+					Kchan_T=Kchan_T+Math.log(Math.random())/(-Bn);
+				}
+				break;
+			case 2:
+				if(An*2/(An*2+Bn*2) > Math.random()){
+					Kchan_phase=3;
+					Kchan_T=Kchan_T+Math.log(Math.random())/(-An*2);
+				}
+				else{
+					Kchan_phase=1;
+					Kchan_T=Kchan_T+Math.log(Math.random())/(-Bn*2);
+				}
+				break;
+			case 3:
+				if(An/(An+Bn*3) > Math.random()){
+					Kchan_phase=4;
+					Kchan_T=Kchan_T+Math.log(Math.random())/(-An);
+				}
+				else{
+					Kchan_phase=2;
+					Kchan_T=Kchan_T+Math.log(Math.random())/(-Bn*3);
+				}
+				break;
+			case 4:
+				Kchan_phase=3;
+				Kchan_T=Kchan_T+Math.log(Math.random())/(-Bn*4);
+				break;
+		}
+		}
+		else{
+			Kchan[i]=Kchan[i-1];
+		}
+		noise=((Math.random()+Math.random()+Math.random()+Math.random()+Math.random())/5-0.5)*noise_level;
+		if(Kchan[i]==4){
+			Kchan1[i]=20*(samplitude-Ek)/1000+noise;
+			Ichan[i]=20*(samplitude-Ek)/1000+noise;
+		}else{
+			Kchan1[i]=0+noise;
+			Ichan[i]=0+noise;
+		}
+		Kchan2[i]=Kchan2[i]+Kchan1[i];
+		t=t+dt;
+		}	
+	}
+//-----------------------------------------------------------
+}  //end function
+//***********************************************************
+//                   CANVASに描画
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+function draw_trace(){
+	var Iion;
+//  スケール　-------------------------------------------------
+	if (idGrid.checked){
+//　電流軸
+	ctx.beginPath();
+	ctx.lineWidth=0.3;
+	for(i=0;i<15;i++){
+		ctx.moveTo(c_x0,i_y0+i_height/14+i_height/14*(i-1));
+		ctx.lineTo(c_x0+Sim_Width,i_y0+i_height/14+i_height/14*(i-1));
+	}
+	ctx.stroke();
+// 時間軸
+	for(i=0;i<10;i++){
+		ctx.moveTo(c_x0+Sim_Width/9*i,i_y0);//時間軸目盛
+		ctx.lineTo(c_x0+Sim_Width/9*i,i_y0+i_height);
+	}
+	ctx.stroke();
+	}
+// 電位のトレース ---------------------------------
+	ctx.beginPath();
+	ctx.strokeStyle = "black";
+	ctx.lineWidth=2;
+	ctx.moveTo(v_x0,(v_y0+v_height/2)-(Vrest+V[0])*((v_height/2)/80));//+80mVまで　(v_height/2)dot=180mV
+	ctx.lineTo(v_x0+Sim_Width/9,(v_y0+v_height/2)-(Vrest+V[0])*((v_height/2)/80));
+	for(i=1;i<(tstop/dt+1);i++){
+		ctx.lineTo(v_x0+i/(tstop/dt)*Sim_Width*8/9+Sim_Width/9,(v_y0+v_height/2)-(Vrest+V[i])*((v_height/2)/80));//電位のトレース
+	}
+	ctx.stroke();
+	//}
+//------------------------------------------------------------
+
+// 膜電流のトレース
+	ctx.beginPath();
+	ctx.strokeStyle = "black";
+	ctx.lineWidth=2;
+	ctx.moveTo(c_x0,i_y1-(I_m[0])*100/5*2);//
+//	ctx.lineTo(c_x0+Sim_Width/9,i_y1-(I_m[0])*100/5*2);
+	for(i=1;i<(tstop/dt+1);i++){
+		if(idNaCh.checked){Iion=I_na[i]}
+		if(idKCh.checked){Iion=I_k[i]}
+//		ctx.lineTo(c_x0+i/(tstop/dt)*Sim_Width*8/9+Sim_Width/9,i_y1-Iion*100/5*2);//膜電流のトレース
+	}
+	ctx.stroke();
+	ctx.strokeStyle ="black";
+
+//---------------------------------------
+//++++++++++++++++++++++++++++++++++++++++++
+}  //draw_trace
+//***************************************
+function Ich_trace(){
+	var i_div=i_height/7;
+// チャネル電流のトレース
+	ctx.beginPath();
+	ctx.lineWidth=2;
+//--------------------------
+	ctx.strokeStyle ="red";
+	ctx.moveTo(i_x0,i_y1-prestim_sum[0]*i_div/(IScale*2));
+	for(i=0;i<(tstop/8/dt);i++){
+		ctx.lineTo(i_x0+i/(tstop/dt)*Sim_Width*8/9,i_y1-(prestim_sum[i]*i_div/(IScale*2)));
+	}
+	ctx.stroke();
+//--------------------------
+	ctx.beginPath();
+	ctx.moveTo(c_x0+Sim_Width/9,i_y1-(Ichan_sum[0]*i_div/(IScale*2)));
+	for(i=0;i<(tstop/dt+1);i++){
+		ctx.lineTo(c_x0+i/(tstop/dt)*Sim_Width*8/9+Sim_Width/9,i_y1-(Ichan_sum[i]*i_div/(IScale*2)));
+	}
+	ctx.stroke();
+	ctx.strokeStyle="red";
+	flag_draw_trace=true;
+	ctx.stroke();
+	ctx.strokeStyle="black";
+} // Ich_trace
+//*******************************************
+//          HH
+//*****************************************
+function HH(){
+	Vm=0.0;
+	V[0]=Vm;
+	I_m[0]=0;I_k[0]=0;I_na[0]=0;Gmk[0]=0;Gmna[0]=0;
+	An=phi*0.01*(10.0-Vm)/(Math.exp((10.0-Vm)/10.0)-1.0);
+	Bn=phi*0.125*Math.exp(-Vm/80.0);
+	Am=phi*0.1*(25.0-Vm)/(Math.exp((25.0-Vm)/10.0)-1.0);
+	Bm=phi*4.0*Math.exp(-Vm/18.0);
+	Ah=phi*0.07*Math.exp(-Vm/20.0);
+	Bh=phi*1.0/(Math.exp((30.0-Vm)/10.0)+1.0);
+
+	n=An/(An+Bn);
+	m=Am/(Am+Bm);
+	h=Ah/(Ah+Bh);
+	
+	An1[0]=An;
+	Bn1[0]=Bn;
+	Am1[0]=Am;
+	Bm1[0]=Bm;
+	Ah1[0]=Ah;
+	Bh1[0]=Bh;
+	t=0.0;
+	for (i=1;i<tstop/dt+1;i++){
+		if (t<=sduration){
+			Vm=samplitude-Vrest;
+		}
+		else{
+			Vm=0.0;
+		}
+		
+		V[i]=Vm;
+		if(Vm==10.0){
+			An=phi*0.1;
+		}
+		else{
+			An=phi*0.01*(10.0-Vm)/(Math.exp((10.0-Vm)/10.0)-1.0);
+		}
+		Bn=phi*0.125*Math.exp(-Vm/80.0);
+		if(Vm==25.0){
+			Am=phi*1.0;
+		}
+		else{
+			Am=phi*0.1*(25.0-Vm)/(Math.exp((25.0-Vm)/10.0)-1.0);
+		}
+		Bm=phi*4.0*Math.exp(-Vm/18.0);
+		Ah=phi*0.07*Math.exp(-Vm/20.0);
+		Bh=phi*1.0/(Math.exp((30.0-Vm)/10.0)+1.0);
+
+		n=(n+(An*(1.0-n)-Bn*n)*dt);
+		m=(m+(Am*(1.0-m)-Bm*m)*dt);
+		h=(h+(Ah*(1.0-h)-Bh*h)*dt);
+
+		Gk=Gk0*n*n*n*n;
+		Gna=Gna0*m*m*m*h;
+		Gl=Gl0;
+
+		Ik=Gk*(Vm+Vrest-Ek)/1000;   //mA
+		Ina=Gna*(Vm+Vrest-Ena)/1000; //mA
+		Il=Gl*(Vm+Vrest-El);
+//		Ichannel=Ik+Ina+Il;
+		Ichannel=Ik+Ina;
+
+//		Im=Istim-Ichannel;
+		newVm=Vm+(Im/Cm)*dt;
+
+		Vm=newVm;
+//		V[i]=Vm;
+		Gmna[i]=Gna;
+		Gmk[i]=Gk;
+		I_k[i]=Ik;
+		I_na[i]=Ina;
+		I_m[i]=Ichannel;  //mA
+		An1[i]=An;
+		Bn1[i]=Bn;
+		Am1[i]=Am;
+		Bm1[i]=Bm;
+		Ah1[i]=Ah;
+		Bh1[i]=Bh;
+	}
+}
+//******************************************
+</script>
+<font size="1"><p><pre>   <a href="CC_instruction_guide.pdf" target="_blank">short instruction guide</a></pre></p></font>
+</form>
+<div id="output"></div>
+</head></html>

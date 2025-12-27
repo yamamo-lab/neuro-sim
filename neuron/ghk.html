@@ -1,0 +1,308 @@
+<!--
+copyright (c) 2020 Takayuki Yamamoto
+Released under the MIT license.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+<!DOCTYPE html>
+<html>
+	<meta charset="UTF-8"/>
+<!--	<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes"/> -->
+	<meta name="viewport" content="width=device-width">
+<head>
+	<title>Membrane Potential</title>
+	<style type="text/css">
+			th.thc1{width: 50px; aline="center"}
+			th.thc2{width: 150px; aline="center"}
+			th.thc3{width: 150px; aline="center"}
+			th.thc4{width: 150px; aline="center"}
+			body{background-color:#98DCAD;}
+	</style>
+</head>
+<body>
+<!-- <h3>GHKの式のシミュレーション</h3> -->
+	<td><b>Temperature</b> <input name="Celsius" type="number" min="0" max="40" step=".1" value="6.3" style="width:50px" onchange="onchange1()" id="idTemp"> ℃</td>
+	<table>
+		<tr>
+			<th class="thc1"></th>
+			<th class="thc2">inside</th>
+			<th class="thc3">outside</th>
+		</tr>
+		<tr>
+			<th class="thc1"><c><i>K<sup>+</sup></i></c></th>
+			<th class="thc2"><input name="Ki" type="number" min="0" max="1000" step="1" style="width:50px"value="400" onchange="onchange1()" id="idKi"> mM</th>
+			<th class="thc3"><input name="Ko" type="number" min="0" max="1000" step="1" style="width:50px"value="20" onchange="onchange1()" id="idKo"> mM</th>
+		</tr>
+		<tr>
+			<th class="thc1"><c><i>Na<sup>+</sup></i></c></th>
+			<th class="thc2"><input name="Nai" type="number" min="0" max="1000" step="1" style="width:50px" value="50" onchange="onchange1()" id="idNai"> mM</th>
+			<th class="thc2"><input name="Nao" type="number" min="0" max="1000" step="1" style="width:50px"value="440" onchange="onchange1()" id="idNao"> mM</th>
+		</tr>
+		<tr>
+			<th class="thc1"><c><i>Cl<sup>-</sup></i></c></th>
+			<th class="thc2"><input name="Cli" type="number" min="0" max="1000" step="1" style="width:50px"value="60" onchange="onchange1()" id="idCli"> mM</th>
+			<th class="thc3"><input name="Clo" type="number" min="0" max="1000" step="1" style="width:50px"value="560" onchange="onchange1()" id="idClo"> mM</th>
+		</tr>
+	</table>
+	<table>
+		<tr>
+			<td><b><i>P<sub>K</sub></i> : <i>P<sub>Na</sub></i> : <i>P<sub>Cl</sub></i> = </b></td>
+			<td><input name="PK" type="number" min="0" max="100" style="width:50px" value="0" onchange="onchange1()" id="idPK"></td>
+			<td>: <input name="PNa" type="number" min="0" max="100" style="width:50px" value="0" onchange="onchange1()" id="idPNa"></td>  
+			<td>: <input name="PCl" type="number" min="0" max="100" style="width:50px" value="0" onchange="onchange1()" id="idPCl"></td>
+		</tr>
+	</table>
+<p><table><tr><td><b>Membrane Potential</b></td>
+	<th class="thc4"><output name="Ei" value="0" id="idEi"></th></output><td><b>mV</b></td>
+	</table></p>
+<!--	<label><input type="checkbox" id="Checkbox7">scale</label><br> -->
+	<canvas id="a_canvas" width="360" height="380"></canvas>
+
+<!--***************************************************************** -->
+<script type="text/javascript"><!--
+	window.addEventListener('load',function(){
+//		load();
+		draw_axis();
+		ctx.lineWidth=3;
+		ctx.strokeStyle="#ff6633";   //----------------------------色
+		ctx.beginPath();
+		ctx.moveTo(c_x0,c_y0+Vscale*5-Ei*Vscale/20);
+		ctx.lineTo(c_x0+Sim_Width,c_y0+Vscale*5-Ei*Vscale/20);
+		ctx.stroke();
+		ctx.lineWidth=1;
+		ctx.strokeStyle="black";
+//		onchange1();
+	});
+	var Ei;
+	var Vrest=-60;
+	var Sim_Width=260;
+	var c_x0=50;
+	var c_width = c_x0+Sim_Width+50;
+	var Sim_Height=520;
+	var c_y0=20;
+	var c_y1=120;
+	var c_y2=c_y0+c_y1-Vrest*(c_y1/80);
+    var c_height = c_y0+ Sim_Height+70;
+	var i_Hight,i_Hight_data;
+	var i_x0=c_x0;    //電流軸
+	var i_y0=c_y0+230;//電流軸
+	var i_y1=i_y0+50;//電流軸
+	var Vscale = 25;//電位軸１目盛px
+	var t_x0=c_x0;
+	var t_y0=i_y1+30;
+	var temp_data;
+	var Camplitude1_data,Cduration1_data;
+	var Camplitude2_data,Cduration2_data;
+	var Interval_data;
+	var Interval;
+	var width,width_data;
+	var TEAratio_data,TTXratio_data;
+	var flag_draw_Gaxis=false;
+	var tstop=8;
+	var check1_data;
+	var check2_data;
+	var check3_data;
+	var check_TEA_data,check_TEA,idCheck_TEA;
+	var check_TTX_data,check_TTX,idCheck_TTX;
+	var check7_data,check8_data;
+	var data_2ms,data_5ms,data_10ms,data_20ms;
+	var data_Single,data_Double,Stim_Num;
+	var data_10uA,data_100uA,data_1000uA;
+
+//canvas要素を取得
+	function $(id){ return document.getElementById(id);}
+	var canvas = $('a_canvas'); //  
+	var ctx = canvas.getContext('2d');	//描画用のコンテキストを取得
+//
+//*****************************************************************************
+//               画面クリア
+//*****************************************************************************
+function draw_cls(){
+	flag_draw_Gaxis=false;
+	draw_axis();
+}
+//****************************************************************************
+//               軸描画
+//****************************************************************************
+function draw_axis(){
+// グラフ幅読み込み -------------------------
+	Sim_Width = 280;	//グラフ幅(px)
+	if(Sim_Width>2000){Sim_Width=2000}
+	if(Sim_Width<100){Sim_Width=100}
+	c_width = c_x0+Sim_Width+50;
+
+//	i_Hight = parseFloat($('idi_Hight').value);
+//	if(i_Hight>1000){i_Hight=1000}
+//	if(i_Hight<20){i_Hight=20}
+//	i_y2=i_y1-200;
+	c_hight=i_y1-140+50;
+
+	canvas.setAttribute('width',c_width);
+	canvas.setAttribute('hight',c_hight);
+	localStorage.width_data=Sim_Width;
+	localStorage.i_Hight_data=i_Hight;
+
+		
+// 時間読み込み -----------------------
+	tstop=20;
+//電位軸-----------------------	
+	ctx.fillStyle="#FFFFFF";
+	ctx.fillRect(c_x0,c_y0,Sim_Width,Vscale*12);
+	ctx.fillStyle="black";
+	
+	ctx.beginPath();
+	ctx.moveTo(c_x0,c_y0);//Y軸 +100mV
+	ctx.lineTo(c_x0,c_y0+Vscale*12);//Y軸　～-100mV
+	for(i=0;i<13;i++){
+		ctx.moveTo(c_x0,c_y0+Vscale*i);
+		ctx.lineTo(c_x0+5,c_y0+Vscale*i);
+	}
+	ctx.stroke();
+	ctx.strokeStyle="black";
+	ctx.font="11pt bold";
+	ctx.fillText("100",20,c_y0+Vscale*0+6);
+	ctx.fillText(" 80",20,c_y0+Vscale*1+6);
+	ctx.fillText(" 60",20,c_y0+Vscale*2+6);
+	ctx.fillText(" 40",20,c_y0+Vscale*3+6);
+	ctx.fillText(" 20",20,c_y0+Vscale*4+6);
+	ctx.fillText("  0",20,c_y0+Vscale*5+6);
+	ctx.fillText("-20",20,c_y0+Vscale*6+6);
+	ctx.fillText("-40",20,c_y0+Vscale*7+6);
+	ctx.fillText("-60",20,c_y0+Vscale*8+6);
+	ctx.fillText("-80",20,c_y0+Vscale*9+6);
+	ctx.fillText("-100",12,c_y0+Vscale*10+6);
+	ctx.fillText("-120",12,c_y0+Vscale*11+6);
+	ctx.fillText("-140",12,c_y0+Vscale*12+6);
+
+	ctx.beginPath();
+	ctx.font = "11pt bold" ;
+	ctx.save();
+	ctx.rotate(-90*Math.PI/180);
+	ctx.fillText("V(mV)",-180,16);
+	ctx.restore();
+
+	idEi.value=0;
+	Ei=0;
+	ctx.beginPath();
+	ctx.moveTo(c_x0,c_y0+Vscale*5);
+	ctx.lineTo(c_x0+Sim_Width,c_y0+Vscale*5);
+	ctx.stroke();
+
+
+//-----------------------------------------------------------------------------------
+// 時間軸
+	t_y0=i_y1+20;
+	ctx.moveTo(c_x0,t_y0);
+	ctx.lineTo(c_x0+Sim_Width,t_y0);			//時間軸
+	for(i=0;i<11;i++){
+		ctx.moveTo(c_x0+Sim_Width/10*i,t_y0);		//時間軸目盛
+		ctx.lineTo(c_x0+Sim_Width/10*i,t_y0-5);
+	}
+	
+	ctx.stroke();
+	ctx.font = "11pt bold" ;				//時間軸ラベル
+	ctx.fillText("0",c_x0-4,t_y0+20);           //時間軸ラベル
+	ctx.fillText(tstop/2,c_x0+Sim_Width*5/10-10,t_y0+20);	//時間軸ラベル
+	ctx.fillText(tstop,c_x0+Sim_Width-10,t_y0+20);  		//時間軸ラベル
+	ctx.font = "11pt bold";
+	ctx.fillText("Time(ms)",c_x0+Sim_Width*.40,t_y0+36);
+//	ctx.stroke();
+	idEi.value=0;
+}
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+function onchange1(){
+	draw_axis();
+	var t= parseFloat($('idTemp').value);
+	if(t>40){
+		t=40;
+		idTemp.value="40"
+	}
+	if(t<0){
+		t=0;
+		idTemp.value="0";
+	}
+	var T=273.15+t;
+	var F=96.485 // C/mol
+	var R=8.3144  // J/K･mol
+	var Nai=parseFloat($('idNai').value);
+	if(Nai<10){
+		Nai=10;
+		idNai.value=10;
+	}
+	var Nao=parseFloat($('idNao').value);
+	if (Nao<1){
+		Nao=1;
+		idNao.value=1;
+	}
+	var Ki=parseFloat($('idKi').value);
+	if (Ki<1){
+		Ki=1;
+		idKi.value=1;
+	}
+	var Ko=parseFloat($('idKo').value);
+	if (Ko<1){
+		Ko=1;
+		idKo.value=1;
+	}
+	var Cli=parseFloat($('idCli').value);
+	if (Cli<1){
+		Cli=1;
+		idCli.value=1;
+	}
+	var Clo=parseFloat($('idClo').value);
+	if (Clo<1){
+		Clo=1;
+		idClo.value=1;
+	}
+	var PK=parseFloat($('idPK').value);
+	if (PK<0){
+		PK=0;
+		idPK.value=0;
+	}
+	var PNa=parseFloat($('idPNa').value);
+	if (PNa<0){
+		PNa=0;
+		idPNa.value=0;
+	}
+	var PCl=parseFloat($('idPCl').value);
+	if (PCl<0){
+		PCl=0;
+		idPCl.value=0;
+	}
+	var A=PK*Ko+PNa*Nao+PCl*Cli;
+	var B=PK*Ki+PNa*Nai+PCl*Clo;
+console.log(A+","+B)
+	if((A==0) || (B==0)){
+console.log(PK+","+PNa+","+PCl);
+//		draw_axis();
+		idEi.value=0;
+		Ei=0;
+	}
+	else{
+		Ei= Math.round(((T*R)/((1)*F)*(Math.log(A)-Math.log(B))*10))/10;
+console.log(Ei+","+T+","+R+","+F);
+		idEi.value=Ei;
+	}
+		ctx.lineWidth=3;
+		ctx.strokeStyle="#ff6633";   //----------------色
+		ctx.beginPath();
+		ctx.moveTo(c_x0,c_y0+Vscale*5-Ei*Vscale/20);
+		ctx.lineTo(c_x0+Sim_Width,c_y0+Vscale*5-Ei*Vscale/20);
+		ctx.stroke();
+		ctx.lineWidth=1;
+		ctx.strokeStyle="black";
+
+}
+
+// -->
+</script>
+<canvas id="a_canvas">このブラウザでは使用できません</canvas>
+<font size="1"><p><pre>   <a href="MP_instruction_guide.pdf" target="_blank">short instruction guide</a></pre></p></font>
+</form>
+</body>
+</html>
