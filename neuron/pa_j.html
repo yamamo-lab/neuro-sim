@@ -23,36 +23,46 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 <body>
 	
 	<form name="form" onsubmit="return false">
+	<div style="
+		font-weight: bold;
+		color: #006666;
+		margin-bottom: 4px;
+	">
+	興奮伝導のシミュレーション
+	</div>
 
 
-	グラフサイズ T: <input type="number" id="idGraphWidth" min="200" max="1000" step="20" value="260" style="width:50px" 
-	    onchange="draw_axis();"><label for="idGraphWidth">px, </label>
-	V:<input type="number" id="idv_height" min="50" max="200" step="10" 
-		value="200" style="width:50px" onchange="draw_axis();">px<br>
-	記録電極
-	  <input type="number" id="idRec" min="0" max="100" step="1"
-	    value="10" style="width:40px" onchange="onchange_Rec();">mm  温度<input type="number" id="idTemperature" min="0" max="33" step=".1" style="width:40px">&nbsp;&deg;C
-	<label><input type="checkbox" id="Checkbox7"  onchange="draw_axis();">目盛線</label><br>
+	サイズ (時間<input type="number" id="idGraphWidth" min="200" max="1000" step="20" value="260" style="width:40px" 
+	    onchange="draw_axis();"><label for="idGraphWidth"> </label>
+	電位<input type="number" id="idv_height" min="50" max="200" step="10" 
+		value="200" style="width:40px" onchange="draw_axis();">px)<br>
+	<label><input type="checkbox" id="Checkbox7"  onchange="draw_axis();">目盛線</label>
+	  <input type="checkbox" id="idTextOut" onclick="onclick_textout();" >数値出力(後要再読込)
+	 <br>
 	時間
 	  <input id="Radio5ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="5ms" />
-        <label for="Radio5ms">5ms</label>
+        <label for="Radio5ms">5m秒</label>
  	  <input id="Radio10ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" checked="checked" value="10ms" />
-        <label for="Radio10ms" >10ms</label>
+        <label for="Radio10ms" >10m秒</label>
 	  <input id="Radio15ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="15ms" />
-        <label for="Radio15ms">15ms</label>
+        <label for="Radio15ms">15m秒</label>
 	  <input id="Radio20ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="20ms" />
-	    <label for="Radio20ms">20ms</label>
+	    <label for="Radio20ms">20m秒</label>
 	<br>
-	刺激
-      <input type="number" id="idCamplitude1" min="-40" max="100.0" step="0.2"
-		value="30.0" style="width:50px" onchange="onchange_check1;"> &mu;A:
-      <input type="number" id="idCduration1" min="0" max="50.0" step="0.2"
-		value="0.1" style="width:40px" onchange="onchange_check1;"> ms 
-	  <input type="checkbox" id="idTextOut" onclick="onclick_textout();" >数値出力
+	電気刺激(位置0mm): 強さ
+      <input type="number" id="idCamplitude1" min="-40" max="100.0" step="0.1"
+		value="30.0" style="width:40px" onchange="onchange_check1;"> &mu;A
+     ,幅<input type="number" id="idCduration1" min="0" max="50.0" step="0.1"
+		value="0.1" style="width:40px" onchange="onchange_check1;"> m秒 
+	<br>
+	記録電極(▼)の位置
+	  <input type="number" id="idRec" min="10" max="100" step=10
+	    value="10" style="width:40px" onchange="onchange_Rec();">mm  温度<input type="number" id="idTemperature" min="0" max="33" step=".1" style="width:40px">&nbsp;&deg;C
 	<br>
 
-	<input type="button" id="idSimulation" value="シミュレーション" onClick="simulation_start()">
-	<input type="button" value=" クリア" id="idcls" onClick="draw_axis()">
+	<input type="button" id="idSimulation" value="実行(計算最大20秒)"
+	 onClick="simulation_start()">
+	<input type="button" value=" グラフクリア" id="idcls" onClick="draw_axis()">
 	<input type="button" value="アニメーション" id="idanime" onClick="animation()">
 	<br>
 	
@@ -354,7 +364,7 @@ function onclick_textout(){
 		}
 	
 	document.write("<br>"+(tstop/dt/1000).toFixed(2)+"msec<br>");
-	document.write("Location(mm), V(mV)".fontcolor("red")+"<br>");
+	document.write("記録電極の位置(mm), V(mV)".fontcolor("red")+"<br>");
 	for(i=1;i<(10/dx+2);i++){
 		document.write(((i-1)*dx*10).toFixed(1)+","+(Vrest+Vm1[i+1][tstop/dt+1]).toFixed(2)+"<br>");		
 		}
@@ -496,7 +506,7 @@ function draw_axis(){
 	ctx.fillStyle="black";
 	ctx.font = "14pt bold";
 	ctx.textAlign = 'left';
-	ctx.fillText("Axon",0,a_y0+a_height/2+6);
+	ctx.fillText("軸索",0,a_y0+a_height/2+6);
 //	onchange_Rec();
 	draw_Rec();
 // 距離軸----------------------------
@@ -514,7 +524,7 @@ function draw_axis(){
 	ctx.fillText("100",c_x0+Sim_Width-10,t_y0+20);  		//距離軸ラベル
 	ctx.font = "14pt bold";
 	ctx.textAlign = 'center';
-	ctx.fillText("Location(mm)",c_x0+Sim_Width*.5,t_y0+36);
+	ctx.fillText("軸索上の位置(mm)",c_x0+Sim_Width*.5,t_y0+40);
 	ctx.textAlign = 'left';
 // 時間軸------------------------------------
 	t_y0=i_y1;
@@ -531,7 +541,7 @@ function draw_axis(){
 	ctx.fillText(tstop,c_x0+Sim_Width-10,t_y0+20);  		//時間軸ラベル
 	ctx.font = "14pt bold";
 	ctx.textAlign = 'center';
-	ctx.fillText("Time(ms)",c_x0+Sim_Width*.5,t_y0+36);
+	ctx.fillText("時間(m秒)",c_x0+Sim_Width*.5,t_y0+40);
 	ctx.textAlign = 'left';
 //グリッド----------------------------------------------------------
 		if (check7 == true){
@@ -632,7 +642,7 @@ function draw_Vaxis(){
 	ctx.save();
 	ctx.rotate(-90*Math.PI/180);
 	ctx.textAlign = 'center';
-	ctx.fillText("V(mV)",-(c_y0+v_height/2),20);
+	ctx.fillText("膜電位(mV)",-(c_y0+v_height/2),14);
 	ctx.restore();
 	ctx.textAlign= 'left';
 //電位軸２-----------------------
@@ -657,7 +667,7 @@ function draw_Vaxis(){
 	ctx.save();
 	ctx.rotate(-90*Math.PI/180);
 	ctx.textAlign = 'center';
-	ctx.fillText("V(mV)",-(i_y0+v_height/2),20);
+	ctx.fillText("膜電位(mV)",-(i_y0+v_height/2),14);
 	ctx.restore();
 	ctx.textAlign= 'left';
 }
@@ -840,7 +850,12 @@ function draw_Axon(){
 
 
 function simulation_start(){
-	setTimeout(disableButtons(),0);
+    // ボタン表示を「計算中」に
+    var btn = document.getElementById('idSimulation');
+    //btn.value = "計算中";
+    btn.disabled = true;
+	
+	//setTimeout(disableButtons(),0);
 	initialization()   //初期設定
 //------------------------------------------------------
 	onchange_check1();
@@ -959,6 +974,7 @@ function draw_Graph(){
 	iStep=tstop/dt+1;
 	draw_Axon();
 	draw_Vm1();　//上のグラフ
+	//idSimulation.value = "実行";
 	idSimulation.disabled=false;
 	idanime.disabled=false;
 	idcls.disabled=false;

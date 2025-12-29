@@ -23,61 +23,72 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 <body>
 	
 	<form name="form" onsubmit="return false">
-
-	グラフサイズ T <input type="number" id="idGraphWidth" min="200" max="1000" step="20" value="280" style="width:50px" 
-	    onchange="draw_axis();"><label for="idGraphWidth">px: </label>
-	I <input type="number" id="idi_Hight" min="100" max="200" step="10" 
-		value="140" style="width:50px" onchange="draw_axis();"><label for="idi_Hight">px</label><br>
-
-	<label><input type="checkbox" id="Checkbox1" checked="checked" onchange="draw_axis();">&mdash; V</label>
-	<label><input type="checkbox" id="Checkbox3" onchange="draw_axis();"><span style="color: blue;">&mdash;  </span>G<sub>K</sub></label>
-	<label><input type="checkbox" id="Checkbox2" onchange="draw_axis();"><span style="color: red;"> &mdash; </span>G<sub>Na</sub></label>
-	 &nbsp;:<input type="number" id="idv_height" min="50" max="400" step="10" 
-		value="260" style="width:50px" onchange="draw_axis();">px<br>
+	<div style="
+		font-weight: bold;
+		color: #006666;
+		margin-bottom: 4px;
+	">
+	活動電位のシミュレーション
+	</div>
+	サイズ (時間<input type="number" id="idGraphWidth" min="200" max="1000" step="20" value="280" style="width:40px" 
+	    onchange="draw_axis();"><label for="idGraphWidth"></label>
+	 電位<input type="number" id="idv_height" min="50" max="400" step="10" 
+		value="260" style="width:40px" onchange="draw_axis();">
+	電流<input type="number" id="idi_Hight" min="100" max="200" step="10" 
+		value="140" style="width:40px" onchange="draw_axis();"><label for="idi_Hight">px)</label>
+	<br>
+	<label><input type="checkbox" id="Checkbox1" checked="checked" style="display:none" onchange="draw_axis();"></label>
+	<label><input type="checkbox" id="idChk_Channel" onchange="onChange_Channel();draw_axis();">
+	チャネル開度表示</label>
+	<label><input type="checkbox" id="Checkbox3" onchange="draw_axis();" style="display:none;"><span style="color: blue;" >
+		<b>&mdash;</b>  </span>K<sup>+</sup>(青線)</label>
+	<label><input type="checkbox" id="Checkbox2" onchange="draw_axis();" style="display:none;"><span style="color: red;"> 
+		<strong>&mdash;</strong> </span>Na<sup>+</sup>(赤線)</label>
+	<br>
 	<div hidden><label><input type="checkbox" id="idchk_n" onchange="draw_axis();">
 	<span style="color: blue;">&mdash; </span>n</label>
 	<label><input type="checkbox" id="idchk_m" onchange="draw_axis();">
 	<span style="color: red;">&mdash; </span>m</label>
 	<label><input type="checkbox" id="idchk_h" onchange="draw_axis();">
 		<span style="color: yellow;">&mdash; </span>h&nbsp;: </label>
-	 <input type="number" id="idp_height" min="50" max="400" step="10" 
+	<input type="number" id="idp_height" min="50" max="400" step="10" 
 		value="200" style="width:50px" onchange="draw_axis();">px:</div>
-	<label><input type="checkbox" id="idchk_grid"  onchange="draw_axis();">グリッド</label>
 
 	<div hidden><label><input type="checkbox" id="idchk_TEA" onchange="onChange_blocker()"><span style=color:red;>TEA</span></label>
 	<input type="number" id="idTEAratio" min="0" max="100" step="1" style="width:40px" onchange="onChange_blocker()">%
 	<label><input type="checkbox" id="idchk_TTX" onchange="onChange_blocker()"><span style="color: blue;">TTX </span></label>
 	<input type="number" id="idTTXratio" min="0" max="100" step="1" style="width:40px" onchange="onChange_blocker()">%: </div>
-	<label><input type="checkbox" id="idChk_textout">数値出力</label>
-	　温度<input type="number" id="idTemperature" min="0" max="40" step=".2" style="width:40px">&nbsp;&deg;C
+	温度<input type="number" id="idTemperature" min="0" max="40" step=".2" style="width:40px">&nbsp;&deg;C
+	<label> <input type="checkbox" id="idchk_grid"  onchange="draw_axis();">nn 目盛線</label>
+	<label> <input type="checkbox" id="idChk_textout">数値出力(後要再読込)</label>
 	<br>
 	時間:
 	  <input id="Radio5ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="5ms" />
-        <label for="Radio5ms">5ms</label>
+        <label for="Radio5ms">5m秒</label>
  	  <input id="Radio10ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" checked="checked" value="10ms" />
-        <label for="Radio10ms" >10ms</label>
+        <label for="Radio10ms" >10m秒</label>
 	  <input id="Radio20ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="20ms" />
-	    <label for="Radio20ms">20ms</label>
+	    <label for="Radio20ms">20m秒</label>
 	  <input id="Radio50ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="50ms" />
-		<label for="Radio50ms">50ms</label><br>
-	刺激:<input id="idStimSingle" name="RadioGroup2" type="radio" onchange="onRadioButtonChange2();" checked="checked" value="Single" />
+		<label for="Radio50ms">50m秒</label><br>
+	電気刺激:<input id="idStimSingle" name="RadioGroup2" type="radio" onchange="onRadioButtonChange2();" checked="checked" value="Single" />
         <label for="StimSingle">単発</label>
  	  <input id="idStimDouble" name="RadioGroup2" type="radio" onchange="onRadioButtonChange2();" value="Double" />
 		<label for="StimDouble" >二発</label>
-	(時間遅れ
+	(間隔
 	  <input type="number" id="idInterval" min="0" max="50.0" step="0.2"
-		value="20" style="width:40px">ms)<br>
-   Stim1:
-      <input type="number" id="idCamplitude1" min="-40" max="100.0" step="0.2"
+		value="20" style="width:40px">m秒)<br>
+	&nbsp;&nbsp;刺激1:
+      強さ<input type="number" id="idCamplitude1" min="-40" max="100.0" step="0.2"
 		value="10.0" style="width:50px" onchange="onChange_stim;"> &mu;A:
-      <input type="number" id="idCduration1" min="0" max="50.0" step="0.2"
-		value="1" style="width:40px" onchange="onChange_stim;"> ms <br>
-    Stim2:
-      <input type="number" id="idCamplitude2" min="-40" max="100" step="0.2"
+      幅<input type="number" id="idCduration1" min="0" max="50.0" step="0.1"
+		value="1" style="width:40px" onchange="onChange_stim;"> m秒 <br>
+    &nbsp;&nbsp;刺激2:
+      強さ<input type="number" id="idCamplitude2" min="-40" max="100" step="0.2"
 		value="10.0" style="width:50px"onchange="onChange_stim;" >  
     &#956;A:
-      <input type="number" id="idCduration2" min="0" max="50.0" step="0.2"
-		value="1" style="width:40px" onchange="onChange_stim;"> ms <br>
+     幅<input type="number" id="idCduration2" min="0" max="50.0" step="0.1"
+		value="1" style="width:40px" onchange="onChange_stim;"> m秒 <br>
 	<input type="button" value="実行" onClick="simulation_start()">
 	<input type="button" value=" グラフクリア" onClick="draw_axis()">
 	<br>
@@ -351,6 +362,10 @@ function load(){
 	var c=localStorage.check8_data;
 	if(c =="false"){$('idChk_textout').checked=false}
 	if(c == "true"){$('idChk_textout').checked=true}	
+// まとめチェックを Checkbox2/3 の状態に合わせる-----------------------
+	document.getElementById("idChk_Channel").checked =
+		document.getElementById("Checkbox2").checked || document.getElementById("Checkbox3").checked;
+
 //変数表示読み込み--------------------------------------------
 	var c=localStorage.chk_n_data;
 	if(c =="false"){$('idchk_n').checked=false}
@@ -450,6 +465,17 @@ function onRadioButtonChange3(){
 	
 	draw_axis();
 */
+}
+//******************************************
+//               コンダクタンス表示変更
+//******************************************
+function onChange_Channel(){
+  const on = document.getElementById("idChk_Channel").checked;
+  document.getElementById("Checkbox2").checked = on; // Na+
+  document.getElementById("Checkbox3").checked = on; // K+
+  // 既存の保存キーをそのまま使う
+  localStorage.check2_data = on;
+  localStorage.check3_data = on;
 }
 //******************************************
 //               刺激回数変更
@@ -653,7 +679,7 @@ function draw_axis(){
 	ctx.fillText(tstop,c_x0+Sim_Width-10,t_y0+20);  		//時間軸ラベル
 	ctx.font = "14pt bold";
 	ctx.textAlign = 'center';
-	ctx.fillText("時間(ms)",c_x0+Sim_Width*.5,t_y0+36);
+	ctx.fillText("時間(m秒)",c_x0+Sim_Width*.5,t_y0+36);
 	ctx.textAlign = 'left';
 //---------------------------------------------------------------------
 //　変数軸
@@ -791,7 +817,7 @@ function draw_Vaxis(){
 	ctx.save();
 	ctx.rotate(-90*Math.PI/180);
 	ctx.textAlign = 'center';
-	ctx.fillText("膜電位(mV)",-(c_y0+v_height/2),20);
+	ctx.fillText("膜電位(mV)",-(c_y0+v_height/2),14);
 	ctx.restore();
 	ctx.textAlign= 'left';
 }
@@ -836,10 +862,10 @@ function draw_Gaxis(){
 
 	ctx.beginPath();
 	ctx.textAlign = 'center';
-	ctx.font = "14pt bold" ;
+	ctx.font = "12pt bold" ;
 	ctx.save();
 	ctx.rotate(-90*Math.PI/180);
-	ctx.fillText("透過性 G(mS)",-(c_y0+c_div*3),x3);
+	ctx.fillText("チャネル開度(相対値)",-(c_y0+c_div*3),x3);
 	ctx.restore();
 	ctx.textAlign= 'left';
 	flag_draw_Gaxis=true;

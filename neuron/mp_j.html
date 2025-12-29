@@ -24,7 +24,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 	</style>
 </head>
 <body>
-<!-- <h3>GHKの式のシミュレーション</h3> -->
+	<div style="
+		font-weight: bold;
+		color: #006666;
+		margin-bottom: 4px;
+	">
+	膜電位のシミュレーション
+	</div>
+
 	<td><b>温度</b> <input name="Celsius" type="number" min="0" max="40" step=".1" value="6.3" style="width:50px" onchange="onchange1()" id="idTemp"> ℃</td>
 	<table>
 		<tr>
@@ -42,17 +49,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 			<th class="thc2"><input name="Nai" type="number" min="0" max="1000" step="1" style="width:50px" value="50" onchange="onchange1()" id="idNai"> mM</th>
 			<th class="thc2"><input name="Nao" type="number" min="0" max="1000" step="1" style="width:50px"value="440" onchange="onchange1()" id="idNao"> mM</th>
 		</tr>
-<!--
-		<tr>
-			<th class="thc1"><c><i>Cl<sup>-</sup></i></c></th>
-			<th class="thc2"><input name="Cli" type="number" min="0" max="1000" step="1" style="width:50px"value="60" onchange="onchange1()" id="idCli"> mM</th>
-			<th class="thc3"><input name="Clo" type="number" min="0" max="1000" step="1" style="width:50px"value="560" onchange="onchange1()" id="idClo"> mM</th>
-		</tr>
--->
 	</table>
 	<table>
 		<tr>
-			<td><b><i>P<sub>K</sub></i> : <i>P<sub>Na</sub></i> = </b></td>
+			<td><b>イオンの透過性比 <c><i>K<sup>+</sup></i></c> : <c><i>Na<sup>+</sup></i></c> = </b></td>
 			<td><input name="PK" type="number" min="0" max="100" style="width:50px" value="0" onchange="onchange1()" id="idPK"></td>
 			<td>: <input name="PNa" type="number" min="0" max="100" style="width:50px" value="0" onchange="onchange1()" id="idPNa"></td>  
 <!--
