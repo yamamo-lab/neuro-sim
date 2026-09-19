@@ -23,17 +23,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 <body>
 	
 <form name="form" onsubmit="return false">
-Graph size T:
+Graph size: T
 <input type="number" id="idGraphWidth" min="200" max="1000" step="20"
     value="260" style="width:50px" onchange="draw_axis();">
 <label for="idGraphWidth">px,&nbsp;&nbsp; </label>
 
-V:
+V
 <input type="number" id="idv_height" min="50" max="200" step="10"
     value="200" style="width:50px" onchange="draw_axis();">px
 <br>
 
-Temp
+Temp:
 <input type="number" id="idTemperature" min="0" max="33" step=".1"
     style="width:40px">&nbsp;&deg;C&nbsp;&nbsp;
 
@@ -46,11 +46,11 @@ Temp
 </label>
 <br>
 
-Rec.:
+Rec:
 <input type="number" id="idRec" min="0" max="100" step="1"
     value="10" style="width:40px" onchange="onchange_Rec();">mm&nbsp;&nbsp;
 
-Time
+Time:
 <input type="number" id="idTime" min="1" max="20" step="1"
     value="5" style="width:50px" onchange="onchange_Time();"> ms
 <br>
@@ -62,9 +62,9 @@ Stim:
 <input type="number" id="idCduration1" min="0" max="50.0" step="0.2"
     value="0.1" style="width:40px" disabled> ms
 <br>
-	<input type="button" id="idSimulation" value="Go" onClick="simulation_start()">
-	<input type="button" value=" CLS" id="idcls" onClick="draw_axis()">
-	<input type="button" value="animation" id="idanime" onClick="animation()">
+	<input type="button" id="idSimulation" value="Go" onClick="simulation_start()">&nbsp;&nbsp;
+	<input type="button" value=" Clear" id="idcls" onClick="draw_axis()">&nbsp;&nbsp;
+	<input type="button" value="Animation" id="idanime" onClick="animation()">
 	<br>
 	
 	<canvas id="a_canvas" width="360" height="720"></canvas>
@@ -324,7 +324,20 @@ function onchange_Rec(){
 	ctx.clearRect(c_x0-6, 0, Sim_Width+12, a_y0+3);
 	ctx.fillStyle="white";
 	ctx.fillRect(c_x0, a_y0, Sim_Width, a_height);
+	// 軸索の上下の境界線を描き直す
+	ctx.strokeStyle="#999999";
+	ctx.lineWidth=1;
+	ctx.beginPath();
+
+	ctx.moveTo(c_x0, a_y0);
+	ctx.lineTo(c_x0+Sim_Width, a_y0);
+
+	ctx.moveTo(c_x0, a_y0+a_height);
+	ctx.lineTo(c_x0+Sim_Width, a_y0+a_height);
+
+	ctx.stroke();
 	draw_Rec();
+	draw_Stim(false);
 }
 //*******************************************
 //        text out
@@ -368,7 +381,7 @@ function draw_cls(){
 //***********************************************
 //               記録電極位置描画
 //***********************************************
-function draw_Rec(){
+function draw_Rec(showLabel=true){
 	ctx.fillStyle="black";
 	ctx.strokeStyle="black";
 	x1=c_x0+Rec/100*Sim_Width;
@@ -381,7 +394,42 @@ function draw_Rec(){
 	ctx.strokeStyle="black";
 	ctx.fill();
 	ctx.stroke();
+	if(showLabel){
+    	ctx.font="11pt bold";
+    	ctx.textAlign="left";
+    	ctx.fillStyle="black";
+    	ctx.fillText("Rec", x1+8, 20);
+	}
+ctx.textAlign="left";
+
+}//***********************************************
+//               刺激電極位置描画
+//***********************************************
+function draw_Stim(showLabel=true){
+    ctx.fillStyle="black";
+    ctx.strokeStyle="black";
+
+    var xStim=c_x0;       // Location 0 mm
+    var yTop=5;
+    var yTip=a_y0+5;
+
+    ctx.beginPath();
+    ctx.moveTo(xStim,yTip);
+    ctx.lineTo(xStim+5,yTop);
+    ctx.lineTo(xStim-5,yTop);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+	if(showLabel){
+    	ctx.font="11pt bold";
+    	ctx.textAlign="right";
+    	ctx.fillStyle="black";
+    	ctx.fillText("Stim", xStim-8, 20);
+	}
+	ctx.textAlign="left";
 }
+
 //************************************************
 //               軸描画
 //***********************************************
@@ -451,9 +499,13 @@ function draw_axis(){
 	ctx.textAlign = 'left';
 	ctx.fillText("Axon",0,a_y0+a_height/2+6);
 
-// 記録電極
+	// 記録電極
 	draw_Rec();
-// 距離軸----------------------------
+
+	// 刺激電極（0 mm）
+	draw_Stim();
+
+	// 距離軸----------------------------
 	t_y0=c_y0+Vscale*7;
 	ctx.moveTo(c_x0,t_y0);
 	ctx.lineTo(c_x0+Sim_Width,t_y0);			//距離軸
@@ -468,7 +520,7 @@ function draw_axis(){
 	ctx.fillText("100",c_x0+Sim_Width-10,t_y0+20);  		//距離軸ラベル
 	ctx.font = "14pt bold";
 	ctx.textAlign = 'center';
-	ctx.fillText("Location(mm)",c_x0+Sim_Width*.5,t_y0+36);
+	ctx.fillText("Location (mm)",c_x0+Sim_Width*.5,t_y0+36);
 	ctx.textAlign = 'left';
 // 時間軸------------------------------------
 	t_y0=i_y1;
@@ -485,7 +537,7 @@ function draw_axis(){
 	ctx.fillText(tstop,c_x0+Sim_Width-10,t_y0+20);  		//時間軸ラベル
 	ctx.font = "14pt bold";
 	ctx.textAlign = 'center';
-	ctx.fillText("Time(ms)",c_x0+Sim_Width*.5,t_y0+36);
+	ctx.fillText("Time (ms)",c_x0+Sim_Width*.5,t_y0+36);
 	ctx.textAlign = 'left';
 //グリッド----------------------------------------------------------
 		if (check7 == true){
@@ -586,7 +638,7 @@ function draw_Vaxis(){
 	ctx.save();
 	ctx.rotate(-90*Math.PI/180);
 	ctx.textAlign = 'center';
-	ctx.fillText("V(mV)",-(c_y0+v_height/2),20);
+	ctx.fillText("V (mV)",-(c_y0+v_height/2),20);
 	ctx.restore();
 	ctx.textAlign= 'left';
 //電位軸２-----------------------
@@ -611,7 +663,7 @@ function draw_Vaxis(){
 	ctx.save();
 	ctx.rotate(-90*Math.PI/180);
 	ctx.textAlign = 'center';
-	ctx.fillText("V(mV)",-(i_y0+v_height/2),20);
+	ctx.fillText("V (mV)",-(i_y0+v_height/2),20);
 	ctx.restore();
 	ctx.textAlign= 'left';
 }
@@ -677,7 +729,11 @@ function animation(){
 	if (check7 == true){
 		draw_Grid();
 	}
-	ctx.fillText(Rec.toFixed(0)+"mm",c_x0+20,i_y0+30);//電極位置テキスト表示
+	ctx.save();
+	ctx.textAlign="right";
+	ctx.fillText(Rec.toFixed(0)+" mm",
+             c_x0+Sim_Width-10,i_y0+30);//電極位置テキスト表示
+ctx.restore();
 	iStep=1;
 	Timer1=setInterval(draw_animation,50);
 }	
@@ -763,7 +819,12 @@ function draw_Vm1(){
 	ctx.strokeStyle="black";
 	ctx.strokeStyle="black";
 	ctx.fillStyle="black";
-	ctx.fillText(((iStep-1)/1000).toFixed(2)+"ms",c_x0+20,c_y0+30);//時間テキスト表示
+	ctx.textAlign="left";
+	ctx.save();
+	ctx.textAlign="right";
+	ctx.fillText(((iStep-1)/1000).toFixed(2)+" ms",
+             c_x0+Sim_Width-10,c_y0+30);
+	ctx.restore();
 }
 //**************************************************
 //     軸索内電位表示
@@ -793,9 +854,9 @@ function draw_Axon(){
 
     ctx.stroke();
 
-    // 記録電極
-    draw_Rec();
-}
+	draw_Rec(false);
+	draw_Stim(false); 
+ }
 //  **************************************************
 //  **                                              **
 //  **               シミュレーション実行                    **
@@ -927,7 +988,11 @@ function draw_Graph(){
 		ctx.lineTo(x,y);//電位2のトレース
 	}
 	ctx.stroke();
-	ctx.fillText(Rec.toFixed(0)+"mm",c_x0+20,i_y0+30);//電極位置テキスト表示
+	ctx.save();
+	ctx.textAlign="right";
+	ctx.fillText(Rec.toFixed(0)+" mm",
+             c_x0+Sim_Width-10,i_y0+30);//電極位置テキスト表示
+	ctx.restore();
 	iStep=tstop/dt+1;
 	draw_Axon();
 	draw_Vm1();　//上のグラフ
