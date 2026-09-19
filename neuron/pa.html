@@ -12,46 +12,57 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-	<meta charset="UTF-8">
+<meta charset="UTF-8">
 <!--	<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes"/>  -->
 	<meta name="viewport" content="width=device-width">
 	<title>Excitatory Conduction</title>
 	<style type="text/css">
-			body{background-color:#ffd700;}<!-- #66cdaa -->
+			body{background-color:#fff8dc;}<!-- #66cdaa -->
 	</style>
 </head>
 <body>
 	
-	<form name="form" onsubmit="return false">
+<form name="form" onsubmit="return false">
+Graph size T:
+<input type="number" id="idGraphWidth" min="200" max="1000" step="20"
+    value="260" style="width:50px" onchange="draw_axis();">
+<label for="idGraphWidth">px,&nbsp;&nbsp; </label>
 
+V:
+<input type="number" id="idv_height" min="50" max="200" step="10"
+    value="200" style="width:50px" onchange="draw_axis();">px
+<br>
 
-	Graph size T: <input type="number" id="idGraphWidth" min="200" max="1000" step="20" value="260" style="width:50px" 
-	    onchange="draw_axis();"><label for="idGraphWidth">px, </label>
-	V:<input type="number" id="idv_height" min="50" max="200" step="10" 
-		value="200" style="width:50px" onchange="draw_axis();">px<br>
-	Rec.:
-	  <input type="number" id="idRec" min="0" max="100" step="1"
-	    value="10" style="width:40px" onchange="onchange_Rec();">mm  	Temp<input type="number" id="idTemperature" min="0" max="33" step=".1" style="width:40px">&nbsp;&deg;C
-	<label><input type="checkbox" id="Checkbox7"  onchange="draw_axis();">Grid</label><br>
-	Time
-	  <input id="Radio5ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="5ms" />
-        <label for="Radio5ms">5ms</label>
- 	  <input id="Radio10ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" checked="checked" value="10ms" />
-        <label for="Radio10ms" >10ms</label>
-	  <input id="Radio15ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="15ms" />
-        <label for="Radio15ms">15ms</label>
-	  <input id="Radio20ms" name="RadioGroup1" type="radio" onchange="onRadioButtonChange();" value="20ms" />
-	    <label for="Radio20ms">20ms</label>
-	<br>
-	Stim:
-      <input type="number" id="idCamplitude1" min="-40" max="100.0" step="0.2"
-		value="30.0" style="width:50px" onchange="onchange_check1;"> &mu;A:
-      <input type="number" id="idCduration1" min="0" max="50.0" step="0.2"
-		value="0.1" style="width:40px" onchange="onchange_check1;"> ms 
-	  <input type="checkbox" id="idTextOut" onclick="onclick_textout();" >text out
-	<br>
+Temp
+<input type="number" id="idTemperature" min="0" max="33" step=".1"
+    style="width:40px">&nbsp;&deg;C&nbsp;&nbsp;
 
-	<input type="button" id="idSimulation" value="Simulate" onClick="simulation_start()">
+<label>
+    <input type="checkbox" id="Checkbox7" onchange="draw_axis();">Grid&nbsp;&nbsp;
+</label>
+
+<label>
+    <input type="checkbox" id="idTextOut" onclick="onclick_textout();">text out
+</label>
+<br>
+
+Rec.:
+<input type="number" id="idRec" min="0" max="100" step="1"
+    value="10" style="width:40px" onchange="onchange_Rec();">mm&nbsp;&nbsp;
+
+Time
+<input type="number" id="idTime" min="1" max="20" step="1"
+    value="5" style="width:50px" onchange="onchange_Time();"> ms
+<br>
+
+Stim:
+<input type="number" id="idCamplitude1" min="0" max="40" step="1"
+    value="30.0" style="width:50px" onchange="onchange_check1;"> &mu;A,&nbsp;&nbsp;
+
+<input type="number" id="idCduration1" min="0" max="50.0" step="0.2"
+    value="0.1" style="width:40px" disabled> ms
+<br>
+	<input type="button" id="idSimulation" value="Go" onClick="simulation_start()">
 	<input type="button" value=" CLS" id="idcls" onClick="draw_axis()">
 	<input type="button" value="animation" id="idanime" onClick="animation()">
 	<br>
@@ -124,17 +135,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 	var Interval_data;
 	var Interval;
 	var width,width_data;
-	var TEAratio_data,TTXratio_data;
 	var flag_draw_Gaxis=false;
 	var flag_draw_pAxis=false;
 	var flag_simulated=false;
 	var tstop=8;
-//	var check1;
-//	var check1_data;
-	var check_TEA, check_TTX;
-	var check_TEA_data,check_TEA,idCheck_TEA;
-	var check_TTX_data,check_TTX,idCheck_TTX;
-	var Gna0bairitu, Gk0bairitu;
 	var check7_data,check8_data;
 	var check7="false";
 	var check8="false";
@@ -144,7 +148,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 	var chk_n="false"
 	var chk_m="false"
 	var chk_h="false"
-	var data_2ms,data_5ms,data_10ms,data_15ms,data_20ms;
 	var data_Single,data_Double;
 	var Stim_Num=1;
 	var data_10uA,data_100uA,data_1000uA;
@@ -195,7 +198,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 //  **************************************************
 //  **                                              **
-//  **               読み込み                          **
+//  **               読み込み                        **
 //  **                                              **
 //  **************************************************
 function load(){
@@ -280,41 +283,12 @@ function load(){
 	if(c =="false"){$('Checkbox7').checked=false}
 	if(c == "true"){$('Checkbox7').checked=true}
 //時間軸読み込み--------------------------------------------
-	var c5=localStorage.data_5ms;
-	if(c5 =="true"){$('Radio5ms').checked=true}
-	var c10=localStorage.data_10ms;
-	if(c10 =="true"){$('Radio10ms').checked=true}
-	var c15=localStorage.data_15ms;
-	if(c15 =="true"){$('Radio15ms').checked=true}
-	var c20=localStorage.data_20ms;
-	if(c20 =="true"){$('Radio20ms').checked=true}
-}
-//*************************************************
-//               時間軸変更
-//*************************************************
-function onRadioButtonChange(){
-// 時間読み込み -----------------------
-	var radiobtn5ms = $("Radio5ms");
-	var radiobtn10ms = $("Radio10ms");
-	var radiobtn15ms = $("Radio15ms");
-	var radiobtn20ms = $("Radio20ms");
-//	var radiobtn50ms = $("Radio50ms");
-	data_5ms=radiobtn5ms.checked;
-	data_10ms=radiobtn10ms.checked;
-	data_15ms=radiobtn15ms.checked;
-	data_20ms=radiobtn20ms.checked;
-//	data_50ms=radiobtn50ms.checked;
-	if (radiobtn5ms.checked){tstop=5}
-	if (radiobtn10ms.checked){tstop=10}
-	if (radiobtn20ms.checked){tstop=20}
-//	if (radiobtn50ms.checked){tstop=50}
-	localStorage.data_5ms=data_5ms;
-	localStorage.data_10ms=data_10ms;
-	localStorage.data_15ms=data_15ms;
-	localStorage.data_20ms=data_20ms;
-//	localStorage.data_50ms=data_50ms;
-	idanime.disabled=true;
-	draw_axis();
+	n=localStorage.time_data;
+	if(isNaN(n)){
+    	n=5;
+	}
+	tstop=Number(n);
+	idTime.value=tstop;
 }
 //***********************************************
 //               刺激入力変更
@@ -326,6 +300,17 @@ function onchange_check1(){
 	if(idCduration1.value<0){idCduration1.value=0}
 	if(idCduration1.value>50){idCduration1.value=50}
 }
+//*************************************************
+//               時間軸変更
+//*************************************************
+function onchange_Time(){
+    tstop=parseInt($('idTime').value);
+    if(tstop<1){tstop=1}
+    if(tstop>20){tstop=20}
+    $('idTime').value=tstop;
+    idanime.disabled=true;
+    draw_axis();
+}
 //***********************************************
 //               記録電極位置変更
 //***********************************************
@@ -336,10 +321,9 @@ function onchange_Rec(){
 	idRec.value=parseInt(idRec.value);
 	Rec = parseFloat($('idRec').value);
 	localStorage.Rec_data=Rec;
-/*	ctx.fillStyle="#ffd700";
-	ctx.beginPath();
-	ctx.fillRect(0,0,Sim_Width,a_y0-1);
-	ctx.stroke(); */
+	ctx.clearRect(c_x0-6, 0, Sim_Width+12, a_y0+3);
+	ctx.fillStyle="white";
+	ctx.fillRect(c_x0, a_y0, Sim_Width, a_height);
 	draw_Rec();
 }
 //*******************************************
@@ -371,26 +355,6 @@ function onclick_textout(){
 	idTextOut.checked=false;
 }
 
-//***********************************************
-//               TEA/TTXチェック
-//***********************************************
-function onCheckBoxChange1(){
-	if($('idCheckbox_TEA').checked==true){
-		$('idTEAratio').disabled=false;
-console.log(idTEAratio.value);
-	}
-	else{
-		$('idTEAratio').value=0;
-		$('idTEAratio').disabled=true;
-	}
-	if($('idCheckbox_TTX').checked==true){
-		$('idTTXratio').disabled=false;
-	}
-	else{
-		idTTXratio.value=0;
-		$('idTTXratio').disabled=true;
-	}
-}
 //************************************************
 //               画面クリア
 //************************************************
@@ -408,7 +372,7 @@ function draw_Rec(){
 	ctx.fillStyle="black";
 	ctx.strokeStyle="black";
 	x1=c_x0+Rec/100*Sim_Width;
-	y1=5, y2=a_y0-1;
+	y1=5, y2=a_y0+5;
 	ctx.beginPath();
 	ctx.moveTo(x1,y2);
 	ctx.lineTo(x1+5,y1);
@@ -439,27 +403,6 @@ function draw_axis(){
 	idv_height.value=v_height;
 	Vscale=v_height/7;
 	localStorage.v_height_data=v_height;
-// 時間読み込み -----------------------
-	var radiobtn5ms = $("Radio5ms");
-   	var radiobtn10ms = $("Radio10ms");
-   	var radiobtn15ms = $("Radio15ms");
-   	var radiobtn20ms = $("Radio20ms");
-//	var radiobtn50ms = $("Radio50ms");
-	data_5ms=radiobtn5ms.checked;
-	data_10ms=radiobtn10ms.checked;
-	data_15ms=radiobtn15ms.checked;
-	data_20ms=radiobtn20ms.checked;
-//	data_50ms=radiobtn50ms.checked;
-	if (radiobtn5ms.checked){tstop=5}
-	if (radiobtn10ms.checked){tstop=10}
-	if (radiobtn15ms.checked){tstop=15}
-	if (radiobtn20ms.checked){tstop=20}
-//	if (radiobtn50ms.checked){tstop=50}
-	localStorage.data_5ms=data_5ms;
-	localStorage.data_10ms=data_10ms;
-	localStorage.data_15ms=data_15ms;
-	localStorage.data_20ms=data_20ms;
-//	localStorage.data_50ms=data_50ms;
 // グリッド表示読み込み　--------------------
 	if(Checkbox7.checked){check7=true;}
 	else{check7=false}
@@ -482,22 +425,33 @@ function draw_axis(){
 	ctx.fillRect(c_x0,i_y0,Sim_Width,Vscale*7);　//電位２
 	ctx.fillStyle="black";
 
-
 //電位軸-----------------------
 	draw_Vaxis();
 //軸索------------------------
+	ctx.fillStyle="white";
+	ctx.fillRect(c_x0, a_y0, Sim_Width, a_height);
 
-	ctx.strokeStyle="white";
-	ctx.fillStyle="white";  
-	ctx.strokeRect(c_x0, a_y0, Sim_Width, a_height);//四角形（輪郭）
-	ctx.fillRect(c_x0, a_y0, Sim_Width, a_height);//四角形（塗りつぶし）
+// 軸索の上下の境界線
+	ctx.strokeStyle="#999999";
+	ctx.lineWidth=1;
+	ctx.beginPath();
+
+	ctx.moveTo(c_x0, a_y0);
+	ctx.lineTo(c_x0+Sim_Width, a_y0);
+
+	ctx.moveTo(c_x0, a_y0+a_height);
+	ctx.lineTo(c_x0+Sim_Width, a_y0+a_height);
+
 	ctx.stroke();
+
+// Axon文字
 	ctx.strokeStyle="black";
 	ctx.fillStyle="black";
 	ctx.font = "14pt bold";
 	ctx.textAlign = 'left';
 	ctx.fillText("Axon",0,a_y0+a_height/2+6);
-//	onchange_Rec();
+
+// 記録電極
 	draw_Rec();
 // 距離軸----------------------------
 	t_y0=c_y0+Vscale*7;
@@ -672,6 +626,7 @@ function initialization(){
 		localStorage.Cduration1_data=Cduration1;
 	Rec=parseFloat($('idRec').value);
 		localStorage.Rec_data=Rec;
+		localStorage.time_data=tstop;
 	check7 = document.form.Checkbox7.checked;
 		localStorage.check7_data=check7;
 //	check8 = document.form.Checkbox8.checked;
@@ -761,6 +716,8 @@ function draw_Vm1(){
 	// 上のグラフ　縦軸・横軸-------------------------------
 	ctx.fillStyle="#FFFFFF";
 	ctx.fillRect(c_x0,c_y0,Sim_Width,Vscale*7);　//上のグラフ塗りつぶし
+	// 右端に残る線を消す
+	ctx.clearRect(c_x0+Sim_Width, c_y0, 2, v_height);
 	ctx.fillStyle="black";
 	ctx.strokeStyle="black";
 	ctx.beginPath();
@@ -823,6 +780,21 @@ function draw_Axon(){
 		ctx.fillRect(c_x0+iSeg/(10/dx+1)*Sim_Width,a_y0,Sim_Width/(10/dx),a_height);
 	}
 	ctx.stroke();
+	    // 軸索の上下の境界線
+    ctx.strokeStyle="#999999";
+    ctx.lineWidth=1;
+    ctx.beginPath();
+
+    ctx.moveTo(c_x0, a_y0);
+    ctx.lineTo(c_x0+Sim_Width, a_y0);
+
+    ctx.moveTo(c_x0, a_y0+a_height);
+    ctx.lineTo(c_x0+Sim_Width, a_y0+a_height);
+
+    ctx.stroke();
+
+    // 記録電極
+    draw_Rec();
 }
 //  **************************************************
 //  **                                              **
@@ -943,7 +915,7 @@ function draw_Graph(){
 //--------------------------------------------------------------------
     //記録電極での膜電位（下）のトレース
 	ctx.beginPath();
-	ctx.strokeStyle="blue";
+	ctx.strokeStyle="black";
 	ctx.lineWidth=2;
 	//y=(i_y0+Vscale*3)-(Vrest+Vm1[2][1])*(Vscale/20); //-80mV～+60mV 20mV=Vscale
 	y=(i_y0+v_height-(Vrest+Vm1[2][1]+80)*v_height/160); //-80mV～+80mV =160mv
